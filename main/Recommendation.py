@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import json
 from datetime import datetime
-from user_auth import SpotifyUserAuth
+from .user_auth import SpotifyUserAuth
 from AI.AI_algorithm import MusicRecommender
 
 def main():

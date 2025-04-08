@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blonded AI - Music Recommendations</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'spotify-green': '#1DB954',
+                        'spotify-black': '#191414',
+                        'spotify-gray': '#121212',
+                        'spotify-light-gray': '#282828',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Regular CSS instead of @apply -->
+    <style>
+        body {
+            background-color: #191414; /* spotify-black */
+            color: white;
+        }
+        
+        .btn-spotify {
+            background-color: #1DB954;
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 2rem;
+            border-radius: 9999px;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+        
+        .btn-spotify:hover {
+            opacity: 0.8;
+        }
+        
+        .card {
+            background-color: #282828; /* spotify-light-gray */
+            border-radius: 0.5rem;
+            padding: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .card:hover {
+            opacity: 0.8;
+        }
+    </style>
+    <!-- Vue.js and Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="min-h-screen">
+    <header class="p-4 flex items-center justify-between border-b border-gray-800">
+        <div class="flex items-center">
+            <h1 class="text-2xl font-bold" style="color: #1DB954;">Blonded AI</h1>
+            <span class="ml-2 text-gray-400">Music Recommendations</span>
+        </div>
+        {% if session.get('user_id') %}
+        <div class="text-white">
+            Hi, {{ session.get('display_name') }}!
+        </div>
+        {% endif %}
+    </header>
+
+    <main class="container mx-auto py-8 px-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-gray-800 p-4 text-center text-gray-400">
+        <p>Powered by Blonded AI - Using Spotify Data</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

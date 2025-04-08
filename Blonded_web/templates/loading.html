@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="loading-app" class="flex flex-col items-center justify-center py-16">
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold mb-3">Generating Your Recommendations</h2>
+        <p class="text-gray-400">This may take a moment while we analyze your music taste</p>
+    </div>
+    
+    <div class="relative w-24 h-24 mb-8">
+        <div class="absolute w-24 h-24 rounded-full border-4 border-spotify-green border-t-transparent animate-spin"></div>
+    </div>
+    
+    <div class="text-center" v-if="error">
+        <p class="text-red-500 mb-4">${ error }</p>
+        <a href="/" class="btn-spotify inline-block">Try Again</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    new Vue({
+        el: '#loading-app',
+        delimiters: ['${', '}'],
+        data: {
+            error: null,
+        },
+        mounted() {
+            this.generateRecommendations();
+        },
+        methods: {
+            generateRecommendations() {
+                axios.post('/api/generate-recommendations')
+                    .then(response => {
+                        if (response.data.success) {
+                            window.location.href = response.data.redirect;
+                        } else {
+                            this.error = response.data.error || 'Failed to generate recommendations';
+                        }
+                    })
+                    .catch(error => {
+                        this.error = error.response?.data?.error || 'An error occurred';
+                        console.error('Error generating recommendations:', error);
+                    });
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -52,6 +52,65 @@ class SpotifyUserAuth:
             print(f"❌ Authentication failed: {str(e)}")
             return False
 
+    # Add these methods to your SpotifyUserAuth class:
+
+    def get_auth_url(self):
+        auth_manager = SpotifyOAuth(
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            redirect_uri=self.redirect_uri,
+            scope=self.scope
+        )
+        return auth_manager.get_authorize_url()
+
+    def complete_authentication(self, code):
+        """Complete Spotify authentication with auth code"""
+        try:
+            redirect_uri = "http://127.0.0.1:5000/callback"
+
+            auth_manager = SpotifyOAuth(
+                client_id=self.client_id,
+                client_secret=self.client_secret,
+                redirect_uri=self.redirect_uri,
+                scope=self.scope
+            )
+            
+            # Get token info
+            token_info = auth_manager.get_access_token(code)
+            
+            # Set up Spotify client
+            self.sp = spotipy.Spotify(auth=token_info['access_token'])
+            
+            # Get basic user info
+            user_info = self.sp.current_user()
+            self.user_data['user_id'] = user_info['id']
+            self.user_data['display_name'] = user_info['display_name']
+            
+            # Store token info for later use
+            self._token_info = token_info
+            
+            return True
+                
+        except Exception as e:
+            print(f"❌ Authentication failed: {str(e)}")
+            return False
+
+    def set_token(self, token_info):
+        """Set token from existing session"""
+        self.sp = spotipy.Spotify(auth=token_info['access_token'])
+        self._token_info = token_info
+        
+        # Get user info
+        user_info = self.sp.current_user()
+        self.user_data['user_id'] = user_info['id']
+        self.user_data['display_name'] = user_info['display_name']
+        
+        return True
+
+    def get_auth_token(self):
+        """Get the current auth token info for session storage"""
+        return self._token_info
+    
     def collect_user_music_data(self):
         if not self.sp:
             print("Not authenticated. Call authenticate() first.")

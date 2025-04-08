@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center py-16">
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold mb-3">Oops! Something Went Wrong</h2>
+        <p class="text-gray-400 mb-6">{{ error_message }}</p>
+        <a href="/" class="btn-spotify inline-block">Return Home</a>
+    </div>
+    
+    {% if technical_details %}
+    <div class="mt-8 p-4 bg-spotify-light-gray rounded-lg text-sm text-gray-400 max-w-2xl">
+        <p class="font-bold mb-2">Technical Details:</p>
+        <pre class="whitespace-pre-wrap">{{ technical_details }}</pre>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
