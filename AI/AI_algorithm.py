@@ -22,7 +22,7 @@ class MusicRecommender:
         # Check for missing values in scaled features
         missing_counts = self.dataset[self.scaled_feature_cols].isna().sum()
         if missing_counts.sum() > 0:
-            print(f"⚠️ Found {missing_counts.sum()} missing values in scaled features")
+            print(f"Found {missing_counts.sum()} missing values in scaled features")
             print(missing_counts[missing_counts > 0])
             
             original_count = len(self.dataset)
@@ -36,15 +36,15 @@ class MusicRecommender:
         matched_tracks = self.dataset[self.dataset['track_id'].isin(user_tracks_df['id'])]
         
         if len(matched_tracks) == 0:
-            print("⚠️ No tracks from user history found in dataset")
+            print("No tracks from user history found in dataset")
             matched_tracks = self.dataset.sort_values('popularity', ascending=False).head(10)
         else:
-            print(f"✅ Found {len(matched_tracks)} tracks in dataset that match user's history")
+            print(f"Found {len(matched_tracks)} tracks in dataset that match user's history")
         
         # Ensure we don't have any NaN values in the matched tracks
         matched_tracks = matched_tracks.dropna(subset=self.scaled_feature_cols)
         if len(matched_tracks) == 0:
-            print("⚠️ All matched tracks had missing values, using popular tracks instead")
+            print("All matched tracks had missing values, using popular tracks instead")
             matched_tracks = self.dataset.sort_values('popularity', ascending=False).head(10)
             matched_tracks = matched_tracks.dropna(subset=self.scaled_feature_cols)
         
@@ -53,7 +53,7 @@ class MusicRecommender:
         
         # Verify the user vector doesn't contain NaN values
         if np.isnan(user_mean_features).any():
-            print("⚠️ User profile contains NaN values, using fallback profile")
+            print("User profile contains NaN values, using fallback profile")
             # Fallback to a safe profile
             safe_tracks = self.dataset.dropna(subset=self.scaled_feature_cols).head(100)
             user_mean_features = safe_tracks[self.scaled_feature_cols].mean().values.reshape(1, -1)
@@ -118,9 +118,7 @@ class MusicRecommender:
                                'similarity', 'score']]
 
     def recommend_artists(self, user_profile, n=5):
-        # First get track recommendations
         track_recommendations = self.recommend_tracks(user_profile, n=100)
-        
         # Count artist occurrences in recommendations, weighted by similarity
         artist_scores = {}
         
@@ -196,19 +194,19 @@ def main():
         'artist_name': ['A Great Big World', 'Jason Mraz', 'Jason Mraz']
     })
     
-    print("\n🔍 Creating user profile...")
+    print("\nCreating user profile...")
     user_profile = recommender.create_user_profile(mock_user_data)
     
-    print("\n💿 Generating track recommendations...")
+    print("\nGenerating track recommendations...")
     track_recommendations = recommender.recommend_tracks(user_profile, n=10)
     print(track_recommendations[['artist', 'title', 'similarity']].head())
     
-    print("\n🎤 Generating artist recommendations...")
+    print("\nGenerating artist recommendations...")
     artist_recommendations = recommender.recommend_artists(user_profile)
     for i, artist in enumerate(artist_recommendations):
         print(f"{i+1}. {artist['artist']} (score: {artist['score']:.3f})")
     
-    print("\n🎵 Generating complete playlist...")
+    print("\nGenerating complete playlist...")
     playlist = recommender.generate_playlist(user_profile)
     print(f"Playlist '{playlist['name']}' with {playlist['track_count']} tracks")
     print(f"Top genres: {', '.join([g['genre'] for g in playlist['genres'][:3]])}")

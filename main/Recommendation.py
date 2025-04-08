@@ -6,9 +6,7 @@ from .user_auth import SpotifyUserAuth
 from AI.AI_algorithm import MusicRecommender
 
 def main():
-    print("🎷 Blonded AI Music Recommendation System")
-    print("-----------------------------------------")
-    
+    print("🎷 Blonded AI Music Recommendation System") 
     # Paths
     dataset_path = '/Users/rafatorres/Desktop/Shaco-AI/data/processed_dataset.csv'
     scaler_path = '/Users/rafatorres/Desktop/Shaco-AI/model/scaler_model.pkl'
@@ -19,12 +17,12 @@ def main():
     auth = SpotifyUserAuth()
     
     if not auth.authenticate():
-        print("❌ Authentication failed. Please check your credentials and try again.")
+        print(" Authentication failed. Please check your credentials and try again.")
         return
         
     print("\n2️⃣ Collecting your music preferences from Spotify...")
     if not auth.collect_user_music_data():
-        print("❌ Failed to collect user data.")
+        print(" Failed to collect user data.")
         return
         
     print("\n3️⃣ Processing your music profile...")
@@ -62,25 +60,25 @@ def main():
         with open(results_file, 'w') as f:
             json.dump(playlist, f, indent=2)
             
-        print("\n✅ Recommendations generated successfully!")
-        print(f"\n🎵 Your Personalized Playlist: {playlist['name']}")
+        print("\n Recommendations generated successfully!")
+        print(f"\n Your Personalized Playlist: {playlist['name']}")
         print(f"   • {len(playlist['tracks'])} tracks")
         print(f"   • Top genres: {', '.join([g['genre'] for g in playlist['genres'][:3]])}")
         
-        print("\n👤 Recommended Artists:")
+        print("\n Recommended Artists:")
         for i, artist in enumerate(playlist['artists'][:5]):
             print(f"   {i+1}. {artist['artist']}")
             
-        print(f"\n📋 Sample Tracks:")
+        print(f"\n Sample Tracks:")
         for i, track in enumerate(playlist['tracks'][:5]):
             print(f"   {i+1}. \"{track['title']}\" by {track['artist']}")
             
-        print(f"\n📄 Full recommendations saved to: {results_file}")
+        print(f"\n Full recommendations saved to: {results_file}")
         
         export_response = input("\nWould you like to export this playlist to your Spotify account? (y/n): ")
         
         if export_response.lower() in ['y', 'yes']:
-            print("\n🚀 Creating playlist on Spotify...")
+            print("\n Creating playlist on Spotify...")
             
             # Extracting track IDs from the recommendations
             track_ids = [track['track_id'] for track in playlist['tracks']]
@@ -96,11 +94,11 @@ def main():
             )
             
             if spotify_playlist:
-                print(f"\n✅ Playlist created successfully!")
-                print(f"🔗 Open in Spotify: {spotify_playlist['url']}")
+                print(f"\nPlaylist created successfully!")
+                print(f"Open in Spotify: {spotify_playlist['url']}")
         
     except Exception as e:
-        print(f"❌ Error generating recommendations: {str(e)}")
+        print(f"Error generating recommendations: {str(e)}")
         
 if __name__ == "__main__":
     main()

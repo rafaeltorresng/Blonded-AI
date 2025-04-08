@@ -18,7 +18,6 @@ class SpotifyUserAuth:
             raise ValueError("Missing Spotify API credentials in .env file")
         
         self.scope = "user-top-read user-read-recently-played user-library-read playlist-modify-public playlist-modify-private"
-
         
         self.sp = None
         self.user_data = {
@@ -40,7 +39,6 @@ class SpotifyUserAuth:
             
             self.sp = spotipy.Spotify(auth_manager=auth_manager)
             
-            # Getting basic user info
             user_info = self.sp.current_user()
             self.user_data['user_id'] = user_info['id']
             self.user_data['display_name'] = user_info['display_name']
@@ -52,41 +50,44 @@ class SpotifyUserAuth:
             print(f"❌ Authentication failed: {str(e)}")
             return False
 
-    # Add these methods to your SpotifyUserAuth class:
-
-    def get_auth_url(self):
+    # Getting authorization URL for Spotify OAuth flow
+    def get_auth_url(self, force_refresh=False):
+        if force_refresh:
+            import uuid
+            cache_path = f".spotify_cache_{uuid.uuid4()}"
+        else:
+            cache_path = ".spotify_cache"
+            
         auth_manager = SpotifyOAuth(
             client_id=self.client_id,
             client_secret=self.client_secret,
             redirect_uri=self.redirect_uri,
-            scope=self.scope
-        )
-        return auth_manager.get_authorize_url()
-
-    def complete_authentication(self, code):
-        """Complete Spotify authentication with auth code"""
-        try:
-            redirect_uri = "http://127.0.0.1:5000/callback"
-
-            auth_manager = SpotifyOAuth(
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            redirect_uri=self.redirect_uri,
-            scope=self.scope
+            scope=self.scope,
+            cache_path=cache_path,
+            show_dialog=True
         )
         
-            # Exchange code for token
+        return auth_manager.get_authorize_url()
+
+    # Completing Spotify authentication with auth code
+    def complete_authentication(self, code):
+        try:
+            auth_manager = SpotifyOAuth(
+                client_id=self.client_id,
+                client_secret=self.client_secret,
+                redirect_uri=self.redirect_uri,
+                scope=self.scope,
+                show_dialog=True
+            )
+        
             token_info = auth_manager.get_access_token(code)
             self.set_token(token_info)
             
-            # Get user profile information
             user_profile = self.sp.current_user()
             
-            # Store essential user data
             self.user_data['user_id'] = user_profile['id']
             self.user_data['display_name'] = user_profile['display_name'] or user_profile['id']
             
-            # Get profile image 
             if user_profile['images'] and len(user_profile['images']) > 0:
                 self.user_data['profile_image'] = user_profile['images'][0]['url']
             else:
@@ -98,20 +99,19 @@ class SpotifyUserAuth:
             print(f"Authentication error: {str(e)}")
             return False
 
+    # Setting token from existing session
     def set_token(self, token_info):
-        """Set token from existing session"""
         self.sp = spotipy.Spotify(auth=token_info['access_token'])
         self._token_info = token_info
         
-        # Get user info
         user_info = self.sp.current_user()
         self.user_data['user_id'] = user_info['id']
         self.user_data['display_name'] = user_info['display_name']
         
         return True
 
+    # Getting the current auth token info for session storage
     def get_auth_token(self):
-        """Get the current auth token info for session storage"""
         return self._token_info
     
     def collect_user_music_data(self):
@@ -120,7 +120,6 @@ class SpotifyUserAuth:
             return False
             
         try:
-            # Collecting top tracks 
             time_ranges = ['short_term', 'medium_term', 'long_term']
             
             for time_range in time_ranges:
@@ -139,7 +138,6 @@ class SpotifyUserAuth:
                 
                 print(f"✅ Collected {len(results['items'])} top tracks ({time_range})")
             
-            # Collecting top artists
             for time_range in time_ranges:
                 results = self.sp.current_user_top_artists(limit=20, time_range=time_range)
                 
@@ -165,14 +163,11 @@ class SpotifyUserAuth:
         os.makedirs(output_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # Saving top tracks as CSV
-        if self.user_data['top_tracks']:
-            tracks_df = pd.DataFrame(self.user_data['top_tracks'])
-            tracks_file = f"{output_dir}/user_top_tracks_{timestamp}.csv"
-            tracks_df.to_csv(tracks_file, index=False)
-            print(f"✅ Saved user top tracks to {tracks_file}")
+        tracks_df = pd.DataFrame(self.user_data['top_tracks'])
+        tracks_file = f"{output_dir}/user_top_tracks_{timestamp}.csv"
+        tracks_df.to_csv(tracks_file, index=False)
+        print(f"✅ Saved user top tracks to {tracks_file}")
         
-        # Saving all user data as JSON 
         user_file = f"{output_dir}/user_data_{timestamp}.json"
         with open(user_file, 'w') as f:
             json.dump(self.user_data, f, indent=2)
@@ -186,14 +181,13 @@ class SpotifyUserAuth:
             return None
             
         try:
-            # Create an empty playlist
             playlist = self.sp.user_playlist_create(
                 user=self.user_data['user_id'],
                 name=playlist_name,
                 public=False,
                 description=description
             )
-            # Adding tracks to the playlist
+            
             playlist_id = playlist['id']
             batch_size = 100
             
@@ -203,7 +197,6 @@ class SpotifyUserAuth:
             
             print(f"✅ Created playlist '{playlist_name}' with {len(track_ids)} tracks")
             
-            # Returning playlist data including its URL
             return {
                 'id': playlist_id,
                 'name': playlist_name,

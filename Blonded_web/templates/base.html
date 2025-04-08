@@ -59,22 +59,37 @@
 <body class="min-h-screen">
     <header class="p-4 flex items-center justify-between border-b border-gray-800">
         <div class="flex items-center">
-            <h1 class="text-2xl font-bold" style="color: #1DB954;">Blonded AI</h1>
-            <span class="ml-2 text-gray-400">Music Recommendations</span>
+            <!-- Make the logo clickable and link to home -->
+            <a href="{{ url_for('index') }}" class="flex items-center hover:opacity-80 transition-opacity">
+                <h1 class="text-2xl font-bold" style="color: #1DB954;">Blonded AI</h1>
+                <span class="ml-2 text-gray-400">Music Recommendations</span>
+            </a>
         </div>
+        
         {% if session.get('user_id') %}
         <div class="flex items-center">
             <div class="text-white mr-3">
                 Hi, {{ session.get('display_name') }}!
             </div>
-            <div class="w-10 h-10 rounded-full overflow-hidden">
-                {% if session.get('profile_image') %}
-                    <img src="{{ session.get('profile_image') }}" alt="Profile" class="w-full h-full object-cover">
-                {% else %}
-                    <div class="w-full h-full bg-spotify-light-gray flex items-center justify-center">
-                        <span class="text-xl">{{ session.get('display_name')[0]|upper }}</span>
-                    </div>
-                {% endif %}
+            
+            <!-- User profile with dropdown menu -->
+            <div class="relative group">
+                <div class="w-10 h-10 rounded-full overflow-hidden cursor-pointer">
+                    {% if session.get('profile_image') %}
+                        <img src="{{ session.get('profile_image') }}" alt="Profile" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full bg-spotify-light-gray flex items-center justify-center">
+                            <span class="text-xl">{{ session.get('display_name')[0]|upper }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Dropdown menu -->
+                <div class="absolute right-0 mt-2 w-48 bg-spotify-light-gray rounded-md shadow-lg py-1 hidden group-hover:block z-10">
+                    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-white hover:bg-black hover:bg-opacity-30">
+                        Log out
+                    </a>
+                </div>
             </div>
         </div>
         {% endif %}
