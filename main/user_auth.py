@@ -17,7 +17,8 @@ class SpotifyUserAuth:
         if not all([self.client_id, self.client_secret, self.redirect_uri]):
             raise ValueError("Missing Spotify API credentials in .env file")
         
-        self.scope = "user-top-read user-read-recently-played user-library-read"
+        self.scope = "user-top-read user-read-recently-played user-library-read playlist-modify-public playlist-modify-private"
+
         
         self.sp = None
         self.user_data = {
@@ -117,6 +118,41 @@ class SpotifyUserAuth:
         
         return tracks_file, user_file
 
+    def create_spotify_playlist(self, playlist_name, track_ids, description=""):
+        if not self.sp:
+            print("Not authenticated. Call authenticate() first.")
+            return None
+            
+        try:
+            # Create an empty playlist
+            playlist = self.sp.user_playlist_create(
+                user=self.user_data['user_id'],
+                name=playlist_name,
+                public=False,
+                description=description
+            )
+            # Adding tracks to the playlist
+            playlist_id = playlist['id']
+            batch_size = 100
+            
+            for i in range(0, len(track_ids), batch_size):
+                batch = track_ids[i:min(i + batch_size, len(track_ids))]
+                self.sp.playlist_add_items(playlist_id, batch)
+            
+            print(f"✅ Created playlist '{playlist_name}' with {len(track_ids)} tracks")
+            
+            # Returning playlist data including its URL
+            return {
+                'id': playlist_id,
+                'name': playlist_name,
+                'url': playlist['external_urls']['spotify'],
+                'tracks_added': len(track_ids)
+            }
+            
+        except Exception as e:
+            print(f"❌ Error creating playlist: {str(e)}")
+            return None
+    
 def main():
     print("🎵 Initializing Spotify authentication...")
     auth = SpotifyUserAuth()
