@@ -1,12 +1,17 @@
+import matplotlib
+matplotlib.use('Agg') 
 import pandas as pd
 import numpy as np
 import pickle
 import os
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.decomposition import PCA
 from collections import Counter
 
 class MusicRecommender:
-    def __init__(self, dataset_path, scaler_path):
+    def __init__(self, dataset_path, scaler_path, use_pca=True, n_components=6):
         print(f"Loading dataset from {dataset_path}...")
         self.dataset = pd.read_csv(dataset_path)
         
@@ -30,6 +35,124 @@ class MusicRecommender:
             print(f"Removed {original_count - len(self.dataset)} rows with missing values")
             
         print(f"Dataset loaded with {len(self.dataset)} tracks")
+        
+        # PCA Embeddings Implementation
+        if use_pca:
+            # Check if PCA embeddings already exist
+            pca_cols = [f'pca_emb_{i}' for i in range(n_components)]
+            if all(col in self.dataset.columns for col in pca_cols):
+                print(f"Using existing PCA embeddings")
+                self.embedding_cols = pca_cols
+                
+                # Load existing PCA model
+                pca_path = os.path.join(os.path.dirname(scaler_path), 'pca_model.pkl')
+                if os.path.exists(pca_path):
+                    with open(pca_path, 'rb') as f:
+                        self.pca = pickle.load(f)
+                        print("Loaded existing PCA model")
+            else:
+                # Create new PCA embeddings
+                self.create_pca_embeddings(n_components)
+        else:
+            # Use original features
+            print("Using original scaled features as embeddings")
+            self.embedding_cols = self.scaled_feature_cols
+    
+    # Plotting the cumulative explained variance of PCA components
+    def plot_pca_variance(self, pca, max_components=None):
+        if max_components is None:
+            max_components = len(pca.explained_variance_ratio_)
+        else:
+            max_components = min(max_components, len(pca.explained_variance_ratio_))
+            
+        # Calculate cumulative explained variance
+        explained_variance = pca.explained_variance_ratio_[:max_components]
+        cumulative_variance = np.cumsum(explained_variance)
+        
+        # Create figure
+        plt.figure(figsize=(10, 6))
+        
+        # Plot individual and cumulative explained variance
+        components = range(1, max_components + 1)
+        plt.bar(components, explained_variance, alpha=0.5, label='Individual explained variance')
+        plt.step(components, cumulative_variance, where='mid', label='Cumulative explained variance')
+        plt.scatter(components, cumulative_variance, s=50)
+        
+        # Add reference lines for common thresholds
+        plt.axhline(y=0.8, color='r', linestyle='--', alpha=0.5, label='80% threshold')
+        plt.axhline(y=0.9, color='g', linestyle='--', alpha=0.5, label='90% threshold')
+        plt.axhline(y=0.95, color='b', linestyle='--', alpha=0.5, label='95% threshold')
+        
+        # Format plot
+        plt.title('Explained Variance by PCA Components')
+        plt.xlabel('Number of Components')
+        plt.ylabel('Explained Variance Ratio')
+        plt.xticks(components)
+        plt.ylim([0, 1.05])
+        plt.grid(True)
+        plt.legend(loc='best')
+        
+        # Save the plot
+        plt.tight_layout()
+        plt.savefig(os.path.dirname(os.path.abspath(__file__)) + '/../pca_variance.png')
+        plt.close()
+        print(f"PCA variance plot saved to pca_variance.png")
+
+    # Createing PCA embeddings from audio features
+    def create_pca_embeddings(self, n_components=6):
+        print("Creating new PCA embeddings...")
+        
+        # Get scaled features
+        features = self.dataset[self.scaled_feature_cols].values
+        
+        # Primeiro, vamos criar um PCA com mais componentes para análise
+        pca_analysis = PCA()
+        pca_analysis.fit(features)
+        
+        # Create and train PCA model
+        pca = PCA(n_components=n_components)
+        embeddings = pca.fit_transform(features)
+        
+        # Save embeddings to dataset
+        for i in range(n_components):
+            self.dataset[f'pca_emb_{i}'] = embeddings[:, i]
+        
+        # Update embedding columns
+        self.embedding_cols = [f'pca_emb_{i}' for i in range(n_components)]
+        
+        # Display variance explained
+        explained_variance = pca.explained_variance_ratio_
+        print(f"Variance explained by components: {explained_variance}")
+        print(f"Total variance explained: {sum(explained_variance):.2f}")
+        
+        # Visualize components
+        self.visualize_pca_components(pca)
+        
+        # Save PCA model
+        os.makedirs(os.path.dirname(os.path.abspath(__file__)) + '/../model', exist_ok=True)
+        pca_path = os.path.dirname(os.path.abspath(__file__)) + '/../model/pca_model.pkl'
+        with open(pca_path, 'wb') as f:
+            pickle.dump(pca, f)
+        
+        self.pca = pca
+        return embeddings
+    
+    # Visualizing PCA components and their relationship to original feature
+    def visualize_pca_components(self, pca):
+        plt.figure(figsize=(12, 8))
+        components = pd.DataFrame(
+            pca.components_, 
+            columns=self.scaled_feature_cols,
+            index=[f'Component {i+1}' for i in range(pca.n_components_)]
+        )
+        
+        sns.heatmap(components, annot=True, cmap='coolwarm', fmt=".2f")
+        plt.title('PCA Components')
+        plt.tight_layout()
+        
+        plt.savefig(os.path.dirname(os.path.abspath(__file__)) + '/../pca_components.png')
+        plt.close()
+        print(f"PCA components visualization saved to pca_components.png")
     
     def create_user_profile(self, user_tracks_df):
         # Find user tracks that exist in our dataset
@@ -42,21 +165,21 @@ class MusicRecommender:
             print(f"Found {len(matched_tracks)} tracks in dataset that match user's history")
         
         # Ensure we don't have any NaN values in the matched tracks
-        matched_tracks = matched_tracks.dropna(subset=self.scaled_feature_cols)
+        matched_tracks = matched_tracks.dropna(subset=self.embedding_cols)
         if len(matched_tracks) == 0:
             print("All matched tracks had missing values, using popular tracks instead")
             matched_tracks = self.dataset.sort_values('popularity', ascending=False).head(10)
-            matched_tracks = matched_tracks.dropna(subset=self.scaled_feature_cols)
+            matched_tracks = matched_tracks.dropna(subset=self.embedding_cols)
         
         # Calculate average feature vector (user's taste profile)
-        user_mean_features = matched_tracks[self.scaled_feature_cols].mean().values.reshape(1, -1)
+        user_mean_features = matched_tracks[self.embedding_cols].mean().values.reshape(1, -1)
         
         # Verify the user vector doesn't contain NaN values
         if np.isnan(user_mean_features).any():
             print("User profile contains NaN values, using fallback profile")
             # Fallback to a safe profile
-            safe_tracks = self.dataset.dropna(subset=self.scaled_feature_cols).head(100)
-            user_mean_features = safe_tracks[self.scaled_feature_cols].mean().values.reshape(1, -1)
+            safe_tracks = self.dataset.dropna(subset=self.embedding_cols).head(100)
+            user_mean_features = safe_tracks[self.embedding_cols].mean().values.reshape(1, -1)
         
         # Identify user's preferred genres
         category_counts = Counter(matched_tracks['category'])
@@ -76,10 +199,10 @@ class MusicRecommender:
         user_vector = user_profile['feature_vector']
         
         # Ensure the dataset has no NaN values
-        valid_tracks = self.dataset.dropna(subset=self.scaled_feature_cols)
+        valid_tracks = self.dataset.dropna(subset=self.embedding_cols)
         
         # Calculate similarity between user profile and valid tracks
-        all_track_features = np.array(valid_tracks[self.scaled_feature_cols])
+        all_track_features = np.array(valid_tracks[self.embedding_cols])
         similarities = cosine_similarity(user_vector, all_track_features)[0]
         
         # Add similarity scores to the valid tracks
@@ -112,8 +235,7 @@ class MusicRecommender:
         if not recommendations.empty:
             # Normalize similarity scores
             max_similarity = recommendations['similarity'].max()
-            recommendations['similarity'] = recommendations['similarity'] / max_similarity
-
+            recommendations.loc[:, 'similarity'] = recommendations['similarity'] / max_similarity
         return recommendations[['track_id', 'artist', 'title', 'category', 
                                'similarity', 'score']]
 
@@ -181,7 +303,8 @@ def main():
     dataset_path = '/Users/rafatorres/Desktop/Shaco-AI/data/processed_dataset.csv'
     scaler_path = '/Users/rafatorres/Desktop/Shaco-AI/model/scaler_model.pkl'
     
-    recommender = MusicRecommender(dataset_path, scaler_path)
+    # Create recommender with PCA embeddings
+    recommender = MusicRecommender(dataset_path, scaler_path, use_pca=True, n_components=6)
     
     # Simulate user data
     mock_user_data = pd.DataFrame({
