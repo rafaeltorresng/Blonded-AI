@@ -24,7 +24,7 @@ os.makedirs(app.config["SESSION_FILE_DIR"], exist_ok=True)
 Session(app)
 
 DATASET_PATH = os.path.join(parent_dir, 'data', 'processed_dataset.csv')
-SCALER_PATH = os.path.join(parent_dir, 'data', 'scaler_model.pkl')  # Changed from 'model' to 'data'
+SCALER_PATH = os.path.join(parent_dir, 'model', 'scaler_model.pkl')  # Changed from 'model' to 'data'
 OUTPUT_DIR = os.path.join(parent_dir, 'recommendations')
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
