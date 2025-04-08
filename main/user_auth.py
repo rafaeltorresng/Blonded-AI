@@ -69,30 +69,33 @@ class SpotifyUserAuth:
             redirect_uri = "http://127.0.0.1:5000/callback"
 
             auth_manager = SpotifyOAuth(
-                client_id=self.client_id,
-                client_secret=self.client_secret,
-                redirect_uri=self.redirect_uri,
-                scope=self.scope
-            )
-            
-            # Get token info
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            redirect_uri=self.redirect_uri,
+            scope=self.scope
+        )
+        
+            # Exchange code for token
             token_info = auth_manager.get_access_token(code)
+            self.set_token(token_info)
             
-            # Set up Spotify client
-            self.sp = spotipy.Spotify(auth=token_info['access_token'])
+            # Get user profile information
+            user_profile = self.sp.current_user()
             
-            # Get basic user info
-            user_info = self.sp.current_user()
-            self.user_data['user_id'] = user_info['id']
-            self.user_data['display_name'] = user_info['display_name']
+            # Store essential user data
+            self.user_data['user_id'] = user_profile['id']
+            self.user_data['display_name'] = user_profile['display_name'] or user_profile['id']
             
-            # Store token info for later use
-            self._token_info = token_info
-            
-            return True
+            # Get profile image 
+            if user_profile['images'] and len(user_profile['images']) > 0:
+                self.user_data['profile_image'] = user_profile['images'][0]['url']
+            else:
+                self.user_data['profile_image'] = None
                 
+            return True
+            
         except Exception as e:
-            print(f"❌ Authentication failed: {str(e)}")
+            print(f"Authentication error: {str(e)}")
             return False
 
     def set_token(self, token_info):

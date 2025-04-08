@@ -63,8 +63,19 @@
             <span class="ml-2 text-gray-400">Music Recommendations</span>
         </div>
         {% if session.get('user_id') %}
-        <div class="text-white">
-            Hi, {{ session.get('display_name') }}!
+        <div class="flex items-center">
+            <div class="text-white mr-3">
+                Hi, {{ session.get('display_name') }}!
+            </div>
+            <div class="w-10 h-10 rounded-full overflow-hidden">
+                {% if session.get('profile_image') %}
+                    <img src="{{ session.get('profile_image') }}" alt="Profile" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full bg-spotify-light-gray flex items-center justify-center">
+                        <span class="text-xl">{{ session.get('display_name')[0]|upper }}</span>
+                    </div>
+                {% endif %}
+            </div>
         </div>
         {% endif %}
     </header>

@@ -108,7 +108,12 @@ class MusicRecommender:
         
         # Select top recommendations
         recommendations = recommendation_df.head(n)
-        
+
+        if not recommendations.empty:
+            # Normalize similarity scores
+            max_similarity = recommendations['similarity'].max()
+            recommendations['similarity'] = recommendations['similarity'] / max_similarity
+
         return recommendations[['track_id', 'artist', 'title', 'category', 
                                'similarity', 'score']]
 
@@ -139,10 +144,17 @@ class MusicRecommender:
         
         # Filter out known artists
         artist_scores = {a: s for a, s in artist_scores.items() if a not in known_artists}
-        
+
         # Return top artists
         top_artists = sorted(artist_scores.items(), key=lambda x: x[1], reverse=True)[:n]
-        return [{"artist": artist, "score": score} for artist, score in top_artists]
+        # Get the maximum score for normalization
+        if top_artists:
+            max_score = top_artists[0][1]
+            normalized_artists = [{"artist": artist, "score": score / max_score} 
+                                for artist, score in top_artists]
+            return normalized_artists
+        else:
+            return []
     
     def generate_playlist(self, user_profile, name="Your Personalized Playlist", tracks=30):
         recommended_tracks = self.recommend_tracks(user_profile, n=tracks)

@@ -77,6 +77,7 @@ def callback():
     # Store minimal user info in session
     session['user_id'] = auth.user_data['user_id']
     session['display_name'] = auth.user_data['display_name']
+    session['profile_image'] = auth.user_data['profile_image']
     session['auth_token'] = auth.get_auth_token()
     
     # Clear authentication flag
