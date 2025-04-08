@@ -1,13 +1,21 @@
-# 🎷 Blonded AI
-As a music lover and AI enthusiast, I created Blonded AI to bridge the gap between cutting-edge technology and the joy of discovering new music. Blonded AI leverages the power of music embeddings to understand your taste at a deeper level based on Spotify data.
+#  Blonded AI
+Blonded AI is my personal project to blend the worlds of AI and music. It utilizes the power of music embeddings to understand your taste at a deeper level based on Spotify data, creating highly personalized recommendations.
 
 ## ✨ Features
-- Embedding-Based Recommendations - Uses vector representations of songs to find perfect matches for your taste
-- Artists and Tracks Discovery - Find new artists and tracks that match your listening profile
-- Spotify Integration - Instantly create Spotify playlists from recommendations
+### 🎯 Embedding-Based Recommendations
+- Uses advanced vector representations of songs
+- Considers multiple musical dimensions
+### 🎸 Artists and Tracks Discovery
+- Finds similar artists based on musical style
+- Suggests tracks matching your taste profile
+- Explores new genres aligned with your preferences
+### 🎵 Spotify Integration
+- Seamless connection with your Spotify account
+- One-click playlist creation
+- Real-time synchronization with your library
 
 ## 🛠️ Project Building Steps
-- Data Collection: Gathered a comprehensive dataset of songs with audio features and metadata.
+- Data Collection: Gathered a comprehensive dataset of Spotify Tracks with audio features and metadata.
 - Embedding Generation: Created song embeddings using machine learning techniques to represent musical characteristics.
 - Model Training: Trained a recommendation model to identify songs that align with user taste based on listening history.
 - Web App Development: Built a Flask-based web application to provide a user-friendly interface.
@@ -37,3 +45,32 @@ All the skills and technologies used in this project:
 
 ### Recommendation
 ![Home Page](/Blonded_web/static/img/Blonded0.2.png)
+
+## 🖥️  Setup
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+3. Configure Environment Variables:
+fill into .env your Spotify API credentials:
+   ```bash
+    SPOTIPY_CLIENT_ID=your_client_id
+    SPOTIPY_CLIENT_SECRET=your_client_secret
+    SPOTIPY_REDIRECT_URI=http://localhost:5000/callback
+To get your Spotify API credentials:
+- Go to the Spotify Developer Dashboard.
+- Log in with your Spotify account.
+- Create a new app.
+- Note the Client ID and Client Secret.
+- Set the Redirect URI to http://localhost:5000/callback.
+4. Run the Flask Application:
+Navigate to the Blonded_web directory and run the Flask application:
+   ```bash
+    cd Blonded_web
+    flask run
+5. Access the Application:
+Open your web browser and go to http://127.0.0.1:5000 to access the Blonded AI application.
+
+## 🤝 Contributing
+Contributions are welcome! Please feel free to submit a Pull Request or contact me if you liked the idea and want develop something.
