@@ -12,7 +12,7 @@ class SpotifyUserAuth:
     def __init__(self):
         self.client_id = os.getenv("SPOTIFY_CLIENT_ID")
         self.client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
-        self.redirect_uri = os.getenv("SPOTIFY_REDIRECT_URI")
+        self.redirect_uri = "http://127.0.0.1:5000/callback"  
         
         if not all([self.client_id, self.client_secret, self.redirect_uri]):
             raise ValueError("Missing Spotify API credentials in .env file")
