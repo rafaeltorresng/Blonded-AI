@@ -3,8 +3,9 @@ Blonded AI is my personal project to blend the worlds of AI and music. It utiliz
 
 ## ✨ Features
 ### 🎯 Embedding-Based Recommendations
-- Uses advanced vector representations of songs
-- Considers multiple musical dimensions
+- Uses advanced vector representations of songs through PCA (Principal Component Analysis)
+- Optimally reduces 9 audio features to 6 dimensions while preserving 90% of information
+- Enhances recommendation quality by capturing correlated musical patterns
 ### 🎸 Artists and Tracks Discovery
 - Finds similar artists based on musical style
 - Suggests tracks matching your taste profile
@@ -16,8 +17,8 @@ Blonded AI is my personal project to blend the worlds of AI and music. It utiliz
 
 ## 🛠️ Project Building Steps
 - Data Collection: Gathered a comprehensive dataset of Spotify Tracks with audio features and metadata.
-- Embedding Generation: Created song embeddings using machine learning techniques to represent musical characteristics.
-- Model Training: Trained a recommendation model to identify songs that align with user taste based on listening history.
+- Embedding Generation: Created song embeddings using PCA to efficiently represent musical characteristics.
+- Model Training: Trained a recommendation model using these embeddings to identify songs that align with user taste.
 - Web App Development: Built a Flask-based web application to provide a user-friendly interface.
 - Spotify Integration: Integrated with the Spotify API to collect user data and export playlists.
 
@@ -45,6 +46,21 @@ All the skills and technologies used in this project:
 
 ### Recommendation
 ![Home Page](/Blonded_web/static/img/Blonded0.2.png)
+
+### 📊 Dataset Audio Features
+The recommendation system analyzes songs using these Spotify audio features:
+
+- **Popularity** (0-100)
+- **Danceability** (0-1) 
+- **Energy** (0-1)
+- **Loudness** (-60-0 dB)
+- **Acousticness** (0-1)
+- **Instrumentalness** (0-1) 
+- **Liveness** (0-1)
+- **Valence** (0-1)
+- **Tempo** (BPM)
+
+These features form the foundation of our embeddings, which are then optimized through PCA to create more meaningful song representations for recommendations.
 
 ## 🖥️  Setup
 
