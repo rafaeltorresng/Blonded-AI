@@ -146,15 +146,48 @@ def generate_recommendations():
         # Get artist images from Spotify
         for artist in playlist['artists']:
             try:
-                artist_data = auth.sp.search(q=f"artist:{artist['artist']}", type='artist', limit=1)
-                if artist_data['artists']['items']:
-                    artist_obj = artist_data['artists']['items'][0]
-                    artist['id'] = artist_obj['id']
-                    artist['image_url'] = artist_obj['images'][0]['url'] if artist_obj['images'] else None
-                    artist['genres'] = artist_obj.get('genres', [])
+                artist_name = artist['artist']
+                print(f"Searching for artist: {artist_name}")
+                
+                # Try exact search first
+                artist_data = auth.sp.search(q=f"artist:\"{artist_name}\"", type='artist', limit=5)
+                
+                # Check for exact name matches first
+                exact_match = None
+                for item in artist_data['artists']['items']:
+                    if item['name'].lower() == artist_name.lower():
+                        exact_match = item
+                        break
+                
+                # If no exact match, try to find closest match
+                if not exact_match and artist_data['artists']['items']:
+                    # Use the first result but log a warning
+                    exact_match = artist_data['artists']['items'][0]
+                    print(f"⚠️ No exact match for '{artist_name}', using '{exact_match['name']}' instead")
+                
+                # If we found a match, use it
+                if exact_match:
+                    artist['id'] = exact_match['id']
+                    artist['image_url'] = exact_match['images'][0]['url'] if exact_match['images'] else None
+                    artist['genres'] = exact_match.get('genres', [])
+                    print(f"✅ Found match for '{artist_name}': {exact_match['name']}")
+                    
+                    # Handle special case for Adele if that's the problem
+                    if artist_name.lower() == "adele" and artist['id'] != "4dpARuHxo51G3z768sgnrY":
+                        # Hardcode Adele's correct Spotify ID and fetch data
+                        adele_id = "4dpARuHxo51G3z768sgnrY"
+                        try:
+                            adele_data = auth.sp.artist(adele_id)
+                            artist['id'] = adele_id
+                            artist['image_url'] = adele_data['images'][0]['url'] if adele_data['images'] else None
+                            artist['genres'] = adele_data.get('genres', [])
+                            print("ℹ️ Used hardcoded ID for Adele")
+                        except Exception as e:
+                            print(f"Error fetching Adele with hardcoded ID: {str(e)}")
+                else:
+                    print(f"❌ No match found for '{artist_name}'")
             except Exception as e:
                 print(f"Error fetching artist data for {artist['artist']}: {str(e)}")
-                # Continue with next artist rather than failing
                 continue
         
         # Save recommendations to file
@@ -187,17 +220,59 @@ def recommendations():
     
     # Load recommendations from file
     try:
-        with open(session['recommendation_file'], 'r') as f:
-            playlist = json.load(f)
+        # Debug prints
+        print(f"Loading recommendation file: {session['recommendation_file']}")
+        print(f"File exists: {os.path.exists(session['recommendation_file'])}")
         
-        return render_template('recommendations.html', 
-                              user=session.get('display_name'),
-                              playlist=playlist)
+        # Verify the file exists and is a valid path
+        if not os.path.exists(session['recommendation_file']):
+            raise FileNotFoundError(f"Recommendation file not found: {session['recommendation_file']}")
+        
+        # Try to load and parse the JSON
+        try:
+            with open(session['recommendation_file'], 'r') as f:
+                playlist = json.load(f)
+                
+            # Debug what we loaded
+            print(f"Loaded playlist with keys: {playlist.keys()}")
+            
+        except json.JSONDecodeError as je:
+            print(f"JSON decode error: {str(je)}")
+            raise
+        
+        # Check that we got valid data
+        if not isinstance(playlist, dict):
+            raise ValueError(f"Invalid playlist type: {type(playlist)}")
+        
+        if 'tracks' not in playlist:
+            raise ValueError(f"Missing 'tracks' key in playlist. Keys: {playlist.keys()}")
+        
+        # Debug template rendering
+        try:
+            return render_template('recommendations.html', 
+                                 user=session.get('display_name'),
+                                 playlist=playlist)
+        except Exception as template_error:
+            print(f"Template rendering error: {str(template_error)}")
+            raise
+                              
+    except FileNotFoundError as e:
+        print(f"File not found error: {str(e)}")
+        # If file is missing, redirect back to loading to regenerate
+        session.pop('recommendation_file', None)
+        return redirect(url_for('loading'))
+        
     except Exception as e:
         print(f"Error loading recommendations: {str(e)}")
+        print(f"Session contains: {list(session.keys())}")
+        
+        # Get the actual exception info
+        import traceback
+        trace = traceback.format_exc()
+        
         return render_template('error.html', 
                              error_message="Could not load recommendations", 
-                             technical_details=str(e))
+                             technical_details=f"{str(e)}\n\n{trace}")
 
 @app.route('/api/export-playlist', methods=['POST'])
 def export_playlist():

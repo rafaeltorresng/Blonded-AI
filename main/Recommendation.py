@@ -11,7 +11,7 @@ def main():
     
     # Paths
     dataset_path = '/Users/rafatorres/Desktop/Shaco-AI/data/processed_dataset.csv'
-    scaler_path = '/Users/rafatorres/Desktop/Shaco-AI/data/scaler_model.pkl'
+    scaler_path = '/Users/rafatorres/Desktop/Shaco-AI/model/scaler_model.pkl'
     output_dir = '/Users/rafatorres/Desktop/Shaco-AI/data/recommendations'
     
     # Authenticating with Spotify and collect user data
