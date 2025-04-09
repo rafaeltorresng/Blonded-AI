@@ -35,7 +35,7 @@
             background: linear-gradient(45deg, #1DB954, #4af7a1, #1DB954, #007d38, #1DB954);
             border-radius: inherit;
             z-index: -1;
-            animation: rotate 3s linear infinite;
+            animation: moveBackground 3s linear infinite;
             background-size: 400%;
             filter: drop-shadow(0 0 5px rgba(29, 185, 84, 0.5));
         }
@@ -91,6 +91,36 @@
             border-radius: 0.5rem;
             overflow: hidden;
         }
+
+        .gradient-border-animation {
+            position: absolute;
+            inset: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                from 0deg, 
+                #1DB954, /* Spotify green */
+                #4af7a1, /* Lighter green */
+                #1DB954, /* Back to Spotify green */
+                #007d38, /* Darker green */
+                #1DB954  /* Back to Spotify green */
+            );
+            animation: rotate 8s linear infinite; 
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .spotify-card-animated {
+            background-color: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 20px rgba(29, 185, 84, 0.15); /* Sombra mais sutil */
+            overflow: hidden;
+            transition: all 0.3s ease; /* Transição suave para tudo */
+        }
         
         .gradient-border::before {
             content: '';
@@ -99,11 +129,11 @@
             background: linear-gradient(45deg, #1DB954, #4af7a1, #1DB954, #007d38, #1DB954);
             border-radius: inherit;
             z-index: -1;
-            animation: rotate 3s linear infinite;
+            animation: moveBackground 3s linear infinite;
             background-size: 400%;
         }
         
-        @keyframes rotate {
+        @keyframes moveBackground {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }

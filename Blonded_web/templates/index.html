@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<!-- Adicionando classe pt-16 (padding-top) para descer o conteúdo -->
 <div class="pt-16 flex flex-col min-h-[70vh] justify-center">
     <div class="text-center mb-12">
         <h2 class="text-5xl font-bold mb-3 flex items-center justify-center">
@@ -10,27 +9,51 @@
         <p class="text-xl text-gray-400 fade-in">Get personalized music recommendations based on your Spotify listening history</p>
     </div>
         
-    <div class="bg-spotify-light-gray p-8 rounded-lg max-w-lg mx-auto w-full">
-        <div class="text-center mb-8">
-            <p class="mb-4">Connect your Spotify account to get started</p>
-            <a href="{{ url_for('login') }}" class="gradient-btn inline-block">
-                <div class="spotify-gradient-btn-content flex items-center">
-                    <!-- Spotify logo SVG -->
-                    <svg class="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+    <!-- Animated gradient border container com efeito simplificado -->
+    <div class="spotify-card-animated max-w-lg mx-auto w-full rounded-lg relative p-[2px] shadow-xl transform hover:scale-[1.01] transition-all duration-300">
+        <div class="absolute inset-0 rounded-lg z-0 overflow-hidden">
+            <div class="gradient-border-animation"></div>
+        </div>
+        
+        <!-- Card content - simplificado -->
+        <div class="bg-spotify-gray p-8 rounded-lg h-full relative z-10">
+            <!-- Header centralizado e clean -->
+            <div class="text-center mb-8">
+                <p class="text-gray-300 mb-6 text-lg">Connect your Spotify account</p>
+                <a href="{{ url_for('login') }}" class="inline-flex items-center px-6 py-3 bg-spotify-green text-white rounded-full font-medium hover:bg-opacity-90 hover:transform hover:scale-105 transition-all duration-300">
+                    <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
                     </svg>
                     Connect with Spotify
+                </a>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-gray-700">
+                <p class="text-spotify-green font-medium mb-4">Blonded AI will:</p>
+                
+                <div class="space-y-3">
+                    <div class="group p-3 rounded-md hover:bg-black hover:bg-opacity-20 transition-all duration-200">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 mr-3 bg-spotify-green rounded-full group-hover:scale-125 transition-transform duration-200"></div>
+                            <p class="text-sm text-gray-300 group-hover:text-white transition-colors duration-200">Access your top tracks and artists</p>
+                        </div>
+                    </div>
+                    
+                    <div class="group p-3 rounded-md hover:bg-black hover:bg-opacity-20 transition-all duration-200">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 mr-3 bg-spotify-green rounded-full group-hover:scale-125 transition-transform duration-200"></div>
+                            <p class="text-sm text-gray-300 group-hover:text-white transition-colors duration-200">Generate personalized recommendations</p>
+                        </div>
+                    </div>
+                    
+                    <div class="group p-3 rounded-md hover:bg-black hover:bg-opacity-20 transition-all duration-200">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 mr-3 bg-spotify-green rounded-full group-hover:scale-125 transition-transform duration-200"></div>
+                            <p class="text-sm text-gray-300 group-hover:text-white transition-colors duration-200">Create playlists on your Spotify account</p>
+                        </div>
+                    </div>
                 </div>
-            </a>
-        </div>
-        
-        <div class="text-sm text-gray-400">
-            <p>Blonded AI will:</p>
-            <ul class="list-disc pl-5 mt-2 space-y-1">
-                <li>Access your top tracks and artists</li>
-                <li>Generate personalized recommendations</li>
-                <li>Create playlists on your Spotify account (with your permission)</li>
-            </ul>
+            </div>
         </div>
     </div>
 </div>
