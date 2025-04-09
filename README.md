@@ -42,10 +42,10 @@ All the skills and technologies used in this project:
 </p>
 
 ### Home Page
-![Home Page](/Blonded_web/static/img/Blonded01.png)
+![Home Page](/Blonded_web/static/img/Blond01.png)
 
 ### Recommendation
-![Home Page](/Blonded_web/static/img/Blonde01.png)
+![Home Page](/Blonded_web/static/img/Blond02.png)
 
 ### 📊 Dataset Audio Features
 The recommendation system analyzes songs using these Spotify audio features:

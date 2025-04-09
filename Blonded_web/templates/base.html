@@ -27,18 +27,50 @@
             color: white;
         }
         
-        .btn-spotify {
+        /* Spotify-themed button with gradient border */
+        .gradient-btn::before {
+            content: '';
+            position: absolute;
+            top: -2px; right: -2px; bottom: -2px; left: -2px;
+            background: linear-gradient(45deg, #1DB954, #4af7a1, #1DB954, #007d38, #1DB954);
+            border-radius: inherit;
+            z-index: -1;
+            animation: rotate 3s linear infinite;
+            background-size: 400%;
+            filter: drop-shadow(0 0 5px rgba(29, 185, 84, 0.5));
+        }
+
+        /* Spotify Green Button Content */
+        .spotify-gradient-btn-content {
             background-color: #1DB954;
             color: white;
             font-weight: bold;
             padding: 0.75rem 2rem;
             border-radius: 9999px;
-            display: inline-block;
+            display: block;
             transition: all 0.2s;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
-        
-        .btn-spotify:hover {
-            opacity: 0.8;
+
+        .spotify-gradient-btn-content:hover:not(:disabled) {
+            background-color: #1ed760; /* Slightly lighter green on hover */
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(29, 185, 84, 0.5);
+        }
+
+        .spotify-gradient-btn-content:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .spotify-gradient-btn-content:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Enhanced hover effect for gradient border */
+        .gradient-btn:hover::before {
+            animation-duration: 1.5s; /* Faster animation on hover */
+            filter: drop-shadow(0 0 8px rgba(29, 185, 84, 0.7));
         }
         
         .card {
@@ -51,17 +83,145 @@
         .card:hover {
             opacity: 0.8;
         }
+        
+        /* Animated Gradient Border */
+        .gradient-border {
+            position: relative;
+            padding: 3px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            top: -2px; right: -2px; bottom: -2px; left: -2px;
+            background: linear-gradient(45deg, #1DB954, #4af7a1, #1DB954, #007d38, #1DB954);
+            border-radius: inherit;
+            z-index: -1;
+            animation: rotate 3s linear infinite;
+            background-size: 400%;
+        }
+        
+        @keyframes rotate {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Content inside gradient border */
+        .gradient-border-content {
+            background-color: #282828; /* spotify-light-gray */
+            color: white;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            height: 100%;
+        }
+
+        /* Gradient border for buttons */
+        .gradient-btn {
+            position: relative;
+            padding: 3px;
+            border-radius: 9999px;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        /* Gradient text for headings */
+        .gradient-text {
+            background: linear-gradient(45deg, #1DB954, #4af7a1, #1DB954);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+        /* Audio wave animation */
+        .audio-wave-path {
+            stroke: #1DB954;
+            stroke-width: 1.5;
+            fill: none;
+            animation: wave 1.5s ease-in-out infinite;
+        }
+
+        @keyframes wave {
+            0% { d: path("M0,10 Q5,5 10,10 T20,10 T30,10 T40,10"); }
+            25% { d: path("M0,10 Q5,2 10,10 T20,18 T30,10 T40,10"); }
+            50% { d: path("M0,10 Q5,15 10,10 T20,5 T30,15 T40,10"); }
+            75% { d: path("M0,10 Q5,18 10,10 T20,2 T30,10 T40,10"); }
+            100% { d: path("M0,10 Q5,5 10,10 T20,10 T30,10 T40,10"); }
+        }
+
+        .reveal-text {
+            clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+            animation: reveal 1.5s cubic-bezier(.77,0,.18,1) forwards;
+        }
+
+        @keyframes reveal {
+            0% { clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); }
+            100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+        }
+
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 1s ease-in-out forwards;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Enhanced equalizer for center title */
+        .equalizer {
+            display: flex;
+            align-items: flex-end;
+            height: 20px;
+            gap: 3px;
+        }
+
+        .equalizer .bar {
+            width: 3px;
+            background: #1DB954;
+            height: 30%;
+            border-radius: 1px;
+            animation: equalize 1.5s ease-in-out infinite;
+            box-shadow: 0 0 5px rgba(29, 185, 84, 0.5);
+        }
+
+        .equalizer .bar:nth-child(1) { animation-delay: 0.0s; height: 40%; }
+        .equalizer .bar:nth-child(2) { animation-delay: 0.2s; height: 60%; }
+        .equalizer .bar:nth-child(3) { animation-delay: 0.4s; height: 80%; }
+        .equalizer .bar:nth-child(4) { animation-delay: 0.6s; height: 50%; }
+        .equalizer .bar:nth-child(5) { animation-delay: 0.8s; height: 70%; }
+
+        @keyframes equalize {
+            0% { height: var(--height, 30%); }
+            50% { height: 100%; }
+            100% { height: var(--height, 30%); }
+        }
+        /* Subtle glow for text - less intense than regular glow-effect */
+        .subtle-glow {
+            text-shadow: 0 0 5px rgba(29, 185, 84, 0.5);
+        }
     </style>
     <!-- Vue.js and Axios -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col">
     <header class="p-4 flex items-center justify-between border-b border-gray-800">
         <div class="flex items-center">
             <!-- Make the logo clickable and link to home -->
             <a href="{{ url_for('index') }}" class="flex items-center hover:opacity-80 transition-opacity">
-                <h1 class="text-2xl font-bold" style="color: #1DB954;">Blonded AI</h1>
+                <h1 class="text-2xl font-bold flex items-center">
+                    <span class="gradient-text subtle-glow">Blonded AI</span>
+                    <span class="inline-block align-middle ml-1">
+                        <svg class="audio-wave" width="40" height="20" viewBox="0 0 40 20">
+                            <path class="audio-wave-path" d="M0,10 Q5,5 10,10 T20,10 T30,10 T40,10" />
+                        </svg>
+                    </span>
+                </h1>
                 <span class="ml-2 text-gray-400">Music Recommendations</span>
             </a>
         </div>
@@ -79,15 +239,18 @@
             </div>
             
             <!-- User profile with dropdown menu -->
+            <!-- User profile with dropdown menu -->
             <div class="relative group">
-                <div class="w-10 h-10 rounded-full overflow-hidden cursor-pointer">
-                    {% if session.get('profile_image') %}
-                        <img src="{{ session.get('profile_image') }}" alt="Profile" class="w-full h-full object-cover">
-                    {% else %}
-                        <div class="w-full h-full bg-spotify-light-gray flex items-center justify-center">
-                            <span class="text-xl">{{ session.get('display_name')[0]|upper }}</span>
-                        </div>
-                    {% endif %}
+                <div class="w-10 h-10 rounded-full overflow-hidden cursor-pointer border border-gray-700">
+                    <div class="flex items-center justify-center w-full h-full">
+                        {% if session.get('profile_image') %}
+                            <img src="{{ session.get('profile_image') }}" alt="Profile" class="w-full h-full object-cover rounded-full">
+                        {% else %}
+                            <div class="w-full h-full bg-spotify-light-gray flex items-center justify-center rounded-full">
+                                <span class="text-xl">{{ session.get('display_name')[0]|upper }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
                 
                 <!-- Dropdown menu -->
@@ -98,11 +261,45 @@
                 </div>
             </div>
         </div>
+        {% else %}
         {% endif %}
+        </div>
     </header>
 
-    <main class="container mx-auto py-8 px-4">
-        {% block content %}{% endblock %}
+    <main class="container mx-auto py-8 px-4 flex-grow">
+        {% block content %}
+        <!-- Example content block showing gradient borders -->
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold mb-4 gradient-text">Discover Your Perfect Music</h2>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                Blonded AI analyzes your music taste to recommend the perfect tracks for you
+            </p>
+        </div>
+
+        <!-- Example card grid with gradient borders -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <!-- Card 1 -->
+            <div class="gradient-border">
+                <div class="gradient-border-content">
+                    <img src="https://via.placeholder.com/300x300" alt="Album cover" class="w-full h-40 object-cover rounded-md mb-3">
+                    <h3 class="text-lg font-semibold">Song Title</h3>
+                    <p class="text-gray-400">Artist Name</p>
+                </div>
+            </div>
+            
+            <!-- Additional cards would go here -->
+        </div>
+        
+        <!-- Featured recommendations section -->
+        <div class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <span class="gradient-text">Featured Recommendations</span>
+                <span class="ml-2 text-sm text-gray-400">(based on your Spotify history)</span>
+            </h2>
+            
+            <!-- Recommendations would go here -->
+        </div>
+        {% endblock %}
     </main>
 
     <footer class="mt-auto p-4 border-t border-gray-800">
