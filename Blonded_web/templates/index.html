@@ -9,15 +9,12 @@
         <p class="text-xl text-gray-400 fade-in">Get personalized music recommendations based on your Spotify listening history</p>
     </div>
         
-    <!-- Animated gradient border container com efeito simplificado -->
     <div class="spotify-card-animated max-w-lg mx-auto w-full rounded-lg relative p-[2px] shadow-xl transform hover:scale-[1.01] transition-all duration-300">
         <div class="absolute inset-0 rounded-lg z-0 overflow-hidden">
             <div class="gradient-border-animation"></div>
         </div>
         
-        <!-- Card content - simplificado -->
         <div class="bg-spotify-gray p-8 rounded-lg h-full relative z-10">
-            <!-- Header centralizado e clean -->
             <div class="text-center mb-8">
                 <p class="text-gray-300 mb-6 text-lg">Connect your Spotify account</p>
                 <a href="{{ url_for('login') }}" class="inline-flex items-center px-6 py-3 bg-spotify-green text-white rounded-full font-medium hover:bg-opacity-90 hover:transform hover:scale-105 transition-all duration-300">
