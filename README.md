@@ -6,6 +6,10 @@ Blonded AI is my personal project to blend the worlds of AI and music. It utiliz
 - Uses advanced vector representations of songs through PCA (Principal Component Analysis)
 - Optimally reduces 9 audio features to 6 dimensions while preserving 90% of information
 - Enhances recommendation quality by capturing correlated musical patterns
+### 🔍 Vector Database Search
+- Leverages ChromaDB for high-performance similarity search
+- Indexes over 113,000 songs for instant retrieval
+- Enables sub-second recommendations even with complex preference vectors
 ### 🎸 Artists and Tracks Discovery
 - Finds similar artists based on musical style
 - Suggests tracks matching your taste profile
@@ -18,7 +22,8 @@ Blonded AI is my personal project to blend the worlds of AI and music. It utiliz
 ## 🛠️ Project Building Steps
 - Data Collection: Gathered a comprehensive dataset of Spotify Tracks with audio features and metadata.
 - Embedding Generation: Created song embeddings using PCA to efficiently represent musical characteristics.
-- Model Training: Trained a recommendation model using these embeddings to identify songs that align with user taste.
+- Vector Database: Implemented ChromaDB to enable efficient similarity search across thousands of songs.
+- Recommendation Engine: Built an algorithm that balances similarity, diversity, and popularity.
 - Web App Development: Built a Flask-based web application to provide a user-friendly interface.
 - Spotify Integration: Integrated with the Spotify API to collect user data and export playlists.
 
@@ -47,28 +52,30 @@ All the skills and technologies used in this project:
 ### Recommendation
 ![Home Page](/Blonded_web/static/img/Blond02.png)
 
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│                 │     │                 │     │                 │
-│  User Login     │────►│  Spotify        │────►│  Data           │
-│  with Spotify   │     │  Authorization  │     │  Collection     │
-│                 │     │                 │     │                 │
-└─────────────────┘     └─────────────────┘     └────────┬────────┘
-                                                         │
-                                                         ▼
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│                 │     │                 │     │                 │
-│  Recommendation │◄────│  Vector         │◄────│  PCA Profile    │
-│  Display        │     │  Search         │     │  Generation     │
-│                 │     │                 │     │                 │
-└────────┬────────┘     └─────────────────┘     └─────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│                 │
-│  Export to      │
-│  Spotify        │
-│                 │
-└─────────────────┘
+## System Flow
+```bash
+┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
+│                     │     │                     │     │                     │
+│  User Authentication│────►│  Track Matching     │────►│  Feature            │
+│  & Data Collection  │     │  with Dataset       │     │  Extraction         │
+│                     │     │                     │     │                     │
+└─────────────────────┘     └─────────────────────┘     └──────────┬──────────┘
+                                                                   │
+                                                                   ▼
+┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
+│                     │     │                     │     │                     │
+│  Recommendation     │◄────│  Result             │◄────│  Vector Database    │
+│  Generation         │     │  Processing         │     │  Similarity Search  │
+│                     │     │                     │     │                     │
+└──────────┬──────────┘     └─────────────────────┘     └─────────────────────┘
+           │
+           ▼
+┌─────────────────────┐
+│                     │
+│  Export to          │
+│  Spotify            │
+│                     │
+└─────────────────────┘
 
 ### 📊 Dataset Audio Features
 The recommendation system analyzes songs using these Spotify audio features:
