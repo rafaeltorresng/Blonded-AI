@@ -52,7 +52,7 @@ All the skills and technologies used in this project:
 ### Recommendation
 ![Home Page](/Blonded_web/static/img/Blond02.png)
 
-## System Flow
+## ⚙️ Workflow
 ```bash
 ┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
 │                     │     │                     │     │                     │
@@ -76,7 +76,7 @@ All the skills and technologies used in this project:
 │  Spotify            │
 │                     │
 └─────────────────────┘
-
+```
 ### 📊 Dataset Audio Features
 The recommendation system analyzes songs using these Spotify audio features:
 
