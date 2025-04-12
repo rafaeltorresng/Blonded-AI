@@ -23,12 +23,31 @@ app.config["SESSION_PERMANENT"] = False
 os.makedirs(app.config["SESSION_FILE_DIR"], exist_ok=True)
 Session(app)
 
+# Configurações de caminhos
 DATASET_PATH = os.path.join(parent_dir, 'data', 'processed_dataset.csv')
-SCALER_PATH = os.path.join(parent_dir, 'model', 'scaler_model.pkl')  # Changed from 'model' to 'data'
+SCALER_PATH = os.path.join(parent_dir, 'model', 'scaler_model.pkl')
 OUTPUT_DIR = os.path.join(parent_dir, 'recommendations')
+CHROMA_DIR = os.path.join(parent_dir, 'chroma_db')
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(DATASET_PATH), exist_ok=True)
+os.makedirs(CHROMA_DIR, exist_ok=True)
+
+# Inicializar o recomendador globalmente para reutilização
+try:
+    print("Inicializando o recomendador com ChromaDB...")
+    global_recommender = MusicRecommender(
+        dataset_path=DATASET_PATH,
+        scaler_path=SCALER_PATH,
+        n_components=6,
+        use_chromadb=True,
+        chromadb_path=CHROMA_DIR
+    )
+    print(f"Recomendador inicializado com sucesso. ChromaDB disponível: {global_recommender.is_vector_search_available()}")
+except Exception as e:
+    print(f"Erro ao inicializar recomendador: {str(e)}")
+    print("Continuando sem ChromaDB...")
+    global_recommender = None
 
 @app.route('/')
 def index():
@@ -102,14 +121,27 @@ def generate_recommendations():
             'artist_name': user_tracks_df['artist_name']
         })
         
-        recommender = MusicRecommender(DATASET_PATH, SCALER_PATH)
+        # Usar o recomendador global se disponível, caso contrário criar nova instância
+        recommender = global_recommender
+        if not recommender:
+            print("Recomendador global não disponível. Criando nova instância...")
+            recommender = MusicRecommender(DATASET_PATH, SCALER_PATH)
+        
+        # Criar perfil do usuário
         user_profile = recommender.create_user_profile(user_tracks)
         
+        # Verificar se podemos usar busca vetorial
+        use_vector_search = recommender.is_vector_search_available()
+        print(f"Gerando playlist com busca vetorial: {use_vector_search}")
+        
+        # Gerar playlist
         playlist = recommender.generate_playlist(
             user_profile,
-            name=f"{session['display_name']}'s Recommended Playlist"
+            name=f"{session['display_name']}'s Recommended Playlist",
+            use_vector_search=use_vector_search
         )
         
+        # Enriquecer dados de artistas
         for artist in playlist['artists']:
             try:
                 artist_name = artist['artist']
@@ -142,6 +174,13 @@ def generate_recommendations():
             except Exception:
                 continue
         
+        # Adicionar informações sobre o método de recomendação usado
+        playlist['metadata'] = {
+            'vector_search_used': use_vector_search,
+            'recommendation_engine': 'ChromaDB' if use_vector_search else 'In-memory similarity'
+        }
+        
+        # Salvar resultados
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         results_file = os.path.join(OUTPUT_DIR, f"recommendations_{session['user_id']}_{timestamp}.json")
         
@@ -153,6 +192,9 @@ def generate_recommendations():
         return jsonify({'success': True, 'redirect': url_for('recommendations')})
         
     except Exception as e:
+        import traceback
+        trace = traceback.format_exc()
+        print(f"Erro ao gerar recomendações: {str(e)}\n{trace}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/recommendations')
@@ -176,9 +218,15 @@ def recommendations():
         if 'tracks' not in playlist:
             raise ValueError(f"Missing 'tracks' key in playlist")
         
+        # Adicionar informação sobre o método de recomendação usado (para debug)
+        vector_search_used = playlist.get('metadata', {}).get('vector_search_used', False)
+        recommendation_engine = playlist.get('metadata', {}).get('recommendation_engine', 'Unknown')
+        
         return render_template('recommendations.html', 
                              user=session.get('display_name'),
-                             playlist=playlist)
+                             playlist=playlist,
+                             vector_search_used=vector_search_used,
+                             recommendation_engine=recommendation_engine)
                               
     except FileNotFoundError:
         session.pop('recommendation_file', None)
@@ -244,6 +292,56 @@ def logout():
                 pass
     
     return redirect(url_for('index', _cache_bust=datetime.now().timestamp()))
+
+@app.route('/status')
+def status():
+    """Endpoint para verificar o status do recomendador e ChromaDB"""
+    if not global_recommender:
+        return jsonify({
+            'status': 'error',
+            'message': 'Recomendador não inicializado'
+        }), 500
+        
+    chroma_available = global_recommender.is_vector_search_available()
+    chroma_count = global_recommender.get_chromadb_count() if chroma_available else 0
+    
+    return jsonify({
+        'status': 'ok',
+        'chromadb_available': chroma_available,
+        'chromadb_items': chroma_count,
+        'dataset_size': len(global_recommender.dataset) if hasattr(global_recommender, 'dataset') else 0,
+        'embedding_dimensions': len(global_recommender.embedding_cols) if hasattr(global_recommender, 'embedding_cols') else 0,
+        'pca_enabled': True
+    })
+
+@app.route('/admin/rebuild-chromadb', methods=['POST'])
+def rebuild_chromadb():
+    """Endpoint para reconstruir o ChromaDB"""
+    global global_recommender
+    
+    try:
+        if not global_recommender:
+            return jsonify({'success': False, 'error': 'Recomendador não inicializado'}), 500
+            
+        success = global_recommender.rebuild_chromadb()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'ChromaDB reconstruído com sucesso',
+                'collection_size': global_recommender.get_chromadb_count()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Falha ao reconstruir ChromaDB'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.errorhandler(404)
 def page_not_found(e):

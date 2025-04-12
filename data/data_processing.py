@@ -60,10 +60,24 @@ def process_csv():
     
     # Adding scaled features to the processed dataframe
     df_processed = pd.concat([df_processed, scaled_df], axis=1)
-    
-    # Saving processed data
-    print(f"\nSaving processed data to {output_file}")
-    df_processed.to_csv(output_file, index=False)
+
+    print("\nVerificando valores ausentes nas features escaladas...")
+    missing_scaled = df_processed[[f"{col}_scaled" for col in numeric_cols]].isna().sum()
+    if missing_scaled.sum() > 0:
+        print(f"Encontrados {missing_scaled.sum()} valores ausentes nas colunas escaladas:")
+        print(missing_scaled[missing_scaled > 0])
+        print("\nRemovendo linhas com valores ausentes...")
+        
+        problem_rows = df_processed[df_processed[[f"{col}_scaled" for col in numeric_cols]].isna().any(axis=1)]
+        print("\nMúsicas problemáticas que serão removidas:")
+        print(problem_rows[['artist', 'title']].head())
+        
+        df_processed = df_processed.dropna(subset=[f"{col}_scaled" for col in numeric_cols])
+        print(f"Restaram {len(df_processed)} músicas após remoção")
+        
+        # Saving processed data
+        print(f"\nSaving processed data to {output_file}")
+        df_processed.to_csv(output_file, index=False)
     
     print(f"Processing complete. Kept {df_processed.shape[0]} rows and {df_processed.shape[1]} columns.")
     print(f"Sample of processed data (showing scaled features):")

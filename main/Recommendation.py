@@ -3,7 +3,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from .user_auth import SpotifyUserAuth
-from AI.AI_algorithm import MusicRecommender
+from AI.recommender import MusicRecommender
 
 def main():
     print("🎷 Blonded AI Music Recommendation System") 
