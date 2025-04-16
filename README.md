@@ -47,10 +47,10 @@ All the skills and technologies used in this project:
 </p>
 
 ### Home Page
-![Home Page](/Blonded_web/static/img/Blond001.png)
+![Home Page](/Blonded_web/static/img/02Blond.png)
 
 ### Recommendation
-![Home Page](/Blonded_web/static/img/Blond02.png)
+![Home Page](/Blonded_web/static/img/BLONDDD01.png)
 
 ## ⚙️ Workflow
 ```bash
