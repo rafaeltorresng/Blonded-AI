@@ -1,14 +1,12 @@
 import pandas as pd
 import numpy as np
-from collections import Counter
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.decomposition import PCA # Import PCA for type hinting
+from sklearn.decomposition import PCA  # Import PCA for type hinting
+
 
 def create_user_profile(dataset: pd.DataFrame, pca_model: PCA, feature_cols: list, user_tracks: pd.DataFrame):
     # Matching user tracks with dataset
     print("Matching user tracks with dataset...")
-    matched_tracks = pd.DataFrame()
-    matched_count = 0
 
     # Ensuring feature_cols exist in the main dataset
     missing_dataset_cols = [col for col in feature_cols if col not in dataset.columns]
@@ -24,15 +22,16 @@ def create_user_profile(dataset: pd.DataFrame, pca_model: PCA, feature_cols: lis
             'track_count': 0
         }
 
-    for _, user_track in user_tracks.iterrows():
-        # Try matching by track_id
-        track_match = dataset[dataset['track_id'] == user_track['id']]
+    # More efficient matching using merge instead of iterating
+    user_track_ids = set(user_tracks['id'].values)
+    matched_tracks = dataset[dataset['track_id'].isin(user_track_ids)].copy()
 
-        if len(track_match) > 0:
-            matched_count += 1
-            cols_to_keep = list(set(feature_cols + ['track_id', 'artist', 'title', 'category']))
-            cols_present = [col for col in cols_to_keep if col in track_match.columns]
-            matched_tracks = pd.concat([matched_tracks, track_match[cols_present]], ignore_index=True)
+    if not matched_tracks.empty:
+        cols_to_keep = list(set(feature_cols + ['track_id', 'artist', 'title', 'category']))
+        cols_present = [col for col in cols_to_keep if col in matched_tracks.columns]
+        matched_tracks = matched_tracks[cols_present]
+
+    matched_count = len(matched_tracks)
 
     print(f"Matched {matched_count} out of {len(user_tracks)} user tracks")
 
@@ -71,14 +70,12 @@ def create_user_profile(dataset: pd.DataFrame, pca_model: PCA, feature_cols: lis
     feature_vector = np.mean(matched_embeddings, axis=0).reshape(1, -1)
     print("User profile vector created.")
 
-    # Getting top artists
-    artist_counts = Counter(matched_tracks['artist'])
-    top_artists = [artist for artist, _ in artist_counts.most_common(10)]
+    # Getting top artists and categories efficiently
+    top_artists = matched_tracks['artist'].value_counts().head(10).index.tolist() if 'artist' in matched_tracks.columns else []
 
     top_categories = []
     if 'category' in matched_tracks.columns:
-        category_counts = Counter(matched_tracks['category'].dropna()) # Ensure NaNs are dropped before counting
-        top_categories = [category for category, _ in category_counts.most_common(5) if category]
+        top_categories = matched_tracks['category'].dropna().value_counts().head(5).index.tolist()
 
     # Creating user profile
     user_profile = {
@@ -90,84 +87,90 @@ def create_user_profile(dataset: pd.DataFrame, pca_model: PCA, feature_cols: lis
     }
 
     return user_profile
-
 def recommend_tracks(dataset: pd.DataFrame, pca_model: PCA, feature_cols: list, user_profile: dict, n=30, diversity_factor=0.3):
     if user_profile['track_count'] == 0 or pca_model is None:
         print("Warning: Empty user profile or missing PCA model. Cannot recommend tracks.")
         return pd.DataFrame(columns=['track_id', 'artist', 'title', 'category', 'similarity', 'score'])
 
-    print("Calculating track similarities (In-Memory - May be slow/memory intensive)...")
+    print("Calculating track similarities (In-Memory - Optimized)...")
 
-    # Generating Embeddings for all tracks
-    try:
-        all_features = dataset[feature_cols].values
-        if np.isnan(all_features).any():
-            print("Warning: NaNs found in dataset features before PCA transform. Imputing with 0.")
-            all_features = np.nan_to_num(all_features, nan=0.0)
-        all_tracks_embeddings = pca_model.transform(all_features)
-    except Exception as e:
-        print(f"Error applying PCA transform to all tracks: {e}")
+    # Pre-filter known tracks to avoid processing them
+    known_tracks = set(user_profile['matched_tracks']['track_id'])
+    candidate_tracks = dataset[~dataset['track_id'].isin(known_tracks)].copy()
+
+    if candidate_tracks.empty:
+        print("No new tracks to recommend after filtering known tracks.")
         return pd.DataFrame(columns=['track_id', 'artist', 'title', 'category', 'similarity', 'score'])
 
-    # Calculate cosine similarity between user profile and all tracks
+    # Generating Embeddings for candidate tracks only
+    try:
+        candidate_features = candidate_tracks[feature_cols].values
+        # Handle NaN values efficiently
+        if np.isnan(candidate_features).any():
+            print("Warning: NaNs found in dataset features before PCA transform. Imputing with 0.")
+            candidate_features = np.nan_to_num(candidate_features, nan=0.0)
+        candidate_embeddings = pca_model.transform(candidate_features)
+    except Exception as e:
+        print(f"Error applying PCA transform to candidate tracks: {e}")
+        return pd.DataFrame(columns=['track_id', 'artist', 'title', 'category', 'similarity', 'score'])
+
+    # Calculate cosine similarity between user profile and candidate tracks
     user_vector = user_profile['feature_vector']
-    similarities = cosine_similarity(user_vector, all_tracks_embeddings)[0]
+    similarities = cosine_similarity(user_vector, candidate_embeddings)[0]
 
-    recommendations = dataset.copy()
-    recommendations['similarity'] = similarities
+    # Add similarity scores to candidates
+    candidate_tracks = candidate_tracks.copy()  # Avoid SettingWithCopyWarning
+    candidate_tracks['similarity'] = similarities
 
-    known_tracks = set(user_profile['matched_tracks']['track_id'])
-    recommendations = recommendations[~recommendations['track_id'].isin(known_tracks)]
-
-    if 'popularity' in recommendations.columns:
-         # Simple normalization (0-100 assumed)
-         recommendations['popularity_norm'] = recommendations['popularity'] / 100.0
-         recommendations['score'] = (1 - diversity_factor) * recommendations['similarity'] + diversity_factor * recommendations['popularity_norm']
+    # Calculate composite score efficiently
+    if 'popularity' in candidate_tracks.columns:
+        # Vectorized normalization
+        popularity_norm = candidate_tracks['popularity'] / 100.0
+        candidate_tracks['score'] = (1 - diversity_factor) * similarities + diversity_factor * popularity_norm
     else:
-         print("Warning: 'popularity' column not found for diversity calculation. Using similarity only.")
-         recommendations['score'] = recommendations['similarity']
+        print("Warning: 'popularity' column not found for diversity calculation. Using similarity only.")
+        candidate_tracks['score'] = similarities
 
-
-    if user_profile['top_categories'] and 'category' in recommendations.columns:
+    # Apply category boost efficiently
+    if user_profile['top_categories'] and 'category' in candidate_tracks.columns:
         category_boost = 0.5
-        is_preferred = recommendations['category'].isin(user_profile['top_categories'])
-        recommendations.loc[is_preferred, 'score'] += category_boost
+        is_preferred = candidate_tracks['category'].isin(user_profile['top_categories'])
+        candidate_tracks.loc[is_preferred, 'score'] += category_boost
 
-    recommendations = recommendations.sort_values('score', ascending=False).head(n)
+    # Sort and get top recommendations
+    recommendations = candidate_tracks.nlargest(n, 'score')
 
-    # Normalize similarity scores (0 to 1) for final output
-    if not recommendations.empty:
+    # Normalize similarity scores efficiently
+    if not recommendations.empty and recommendations['similarity'].max() > recommendations['similarity'].min():
         min_sim = recommendations['similarity'].min()
         max_sim = recommendations['similarity'].max()
-        if max_sim > min_sim: # Avoid division by zero if all similarities are the same
-            recommendations['similarity'] = (recommendations['similarity'] - min_sim) / (max_sim - min_sim)
-        elif max_sim != 0: # Handle case where all similarities are the same non-zero value
-             recommendations['similarity'] = 1.0
-        else: # All similarities are zero
-             recommendations['similarity'] = 0.0
-
+        recommendations = recommendations.copy()  # Avoid SettingWithCopyWarning
+        recommendations['similarity'] = (recommendations['similarity'] - min_sim) / (max_sim - min_sim)
+    elif not recommendations.empty:
+        recommendations = recommendations.copy()
+        recommendations['similarity'] = 1.0 if recommendations['similarity'].iloc[0] > 0 else 0.0
 
     return recommendations[['track_id', 'artist', 'title', 'category', 'similarity', 'score']]
+
 
 def recommend_tracks_with_chromadb(dataset: pd.DataFrame, pca_model: PCA, feature_cols: list, chroma_collection, user_profile: dict, n=30, diversity_factor=0.3):
     if chroma_collection is None:
         print("ChromaDB not available, falling back to in-memory search")
         return recommend_tracks(dataset, pca_model, feature_cols, user_profile, n, diversity_factor)
 
-    if user_profile['track_count'] == 0 or pca_model is None: 
+    if user_profile['track_count'] == 0 or pca_model is None:
         print("Warning: Empty user profile or missing PCA model. Cannot recommend tracks.")
         return pd.DataFrame(columns=['track_id', 'artist', 'title', 'category', 'similarity', 'score'])
 
     print("Generating recommendations using ChromaDB vector search...")
 
     user_vector = user_profile['feature_vector'][0].tolist()
-
-    known_track_ids = list(user_profile['matched_tracks']['track_id'])
+    known_track_ids = set(user_profile['matched_tracks']['track_id'])
 
     try:
         results = chroma_collection.query(
             query_embeddings=[user_vector],
-            n_results=n * 3,  
+            n_results=n * 3,  # Get more results to filter known tracks
             include=["metadatas", "distances"]
         )
     except Exception as e:
@@ -175,104 +178,123 @@ def recommend_tracks_with_chromadb(dataset: pd.DataFrame, pca_model: PCA, featur
         print("Falling back to in-memory search...")
         return recommend_tracks(dataset, pca_model, feature_cols, user_profile, n, diversity_factor)
 
-
-    # Process results
+    # Process results efficiently
     if not results or not results.get('ids') or not results['ids'][0]:
         print("No search results from ChromaDB")
         return pd.DataFrame(columns=['track_id', 'artist', 'title', 'category', 'similarity', 'score'])
 
-    recommendations = []
-    processed_ids = set() 
+    # Prepare data for DataFrame creation
+    recommendations_data = []
+    seen_ids = set()
 
     for i, track_id in enumerate(results['ids'][0]):
-        if track_id in processed_ids or track_id in known_track_ids:
-            continue 
+        if track_id in seen_ids or track_id in known_track_ids:
+            continue
 
         metadata = results['metadatas'][0][i]
         distance = results['distances'][0][i]
 
+        # Clamp distance and convert to similarity
         clamped_distance = max(0.0, min(distance, 2.0))
         similarity = 1.0 - (clamped_distance / 2.0)
 
-        recommendations.append({
-            'track_id': metadata.get('track_id', track_id), 
+        recommendations_data.append({
+            'track_id': metadata.get('track_id', track_id),
             'artist': metadata.get('artist', 'Unknown Artist'),
             'title': metadata.get('title', 'Unknown Title'),
             'category': metadata.get('category', ''),
             'similarity': similarity,
-            'popularity': metadata.get('popularity', 0.0) 
+            'popularity': metadata.get('popularity', 0.0)
         })
-        processed_ids.add(track_id)
+        seen_ids.add(track_id)
 
+        if len(recommendations_data) >= n * 2:  # Stop when we have enough candidates
+            break
 
-    if not recommendations:
-         print("No valid recommendations after processing ChromaDB results.")
-         return pd.DataFrame(columns=['track_id', 'artist', 'title', 'category', 'similarity', 'score'])
+    if not recommendations_data:
+        print("No valid recommendations after processing ChromaDB results.")
+        return pd.DataFrame(columns=['track_id', 'artist', 'title', 'category', 'similarity', 'score'])
 
-    recommendation_df = pd.DataFrame(recommendations)
+    # Create DataFrame and process efficiently
+    recommendation_df = pd.DataFrame(recommendations_data)
 
+    # Vectorized operations for better performance
     recommendation_df['popularity'] = pd.to_numeric(recommendation_df['popularity'], errors='coerce').fillna(0.0)
     max_pop = recommendation_df['popularity'].max()
-    recommendation_df['popularity_norm'] = recommendation_df['popularity'] / 100.0 if max_pop <= 100 else recommendation_df['popularity'] / max_pop if max_pop > 0 else 0.0
+    if max_pop > 0:
+        popularity_norm = recommendation_df['popularity'] / (100.0 if max_pop <= 100 else max_pop)
+    else:
+        popularity_norm = 0.0
 
+    # Calculate composite score
     recommendation_df['score'] = (
         (1 - diversity_factor) * recommendation_df['similarity'] +
-        diversity_factor * recommendation_df['popularity_norm']
+        diversity_factor * popularity_norm
     )
 
+    # Apply category boost efficiently
     if user_profile['top_categories']:
         category_boost = 0.2
         is_preferred = recommendation_df['category'].isin(user_profile['top_categories'])
         recommendation_df.loc[is_preferred, 'score'] += category_boost
 
-    recommendation_df = recommendation_df.sort_values('score', ascending=False)
+    # Get top N recommendations
+    recommendations_final = recommendation_df.nlargest(n, 'score')
 
-    # Selecting top recommendations
-    recommendations_final = recommendation_df.head(n)
-
-    # Normalize similarity scores (0 to 1) for final output
-    if not recommendations_final.empty:
+    # Normalize similarity scores efficiently
+    if not recommendations_final.empty and len(recommendations_final) > 1:
         min_sim = recommendations_final['similarity'].min()
         max_sim = recommendations_final['similarity'].max()
         if max_sim > min_sim:
-            recommendations_final.loc[:, 'similarity'] = (recommendations_final['similarity'] - min_sim) / (max_sim - min_sim)
-        elif max_sim != 0:
-             recommendations_final.loc[:, 'similarity'] = 1.0
+            recommendations_final = recommendations_final.copy()
+            recommendations_final['similarity'] = (recommendations_final['similarity'] - min_sim) / (max_sim - min_sim)
+        elif max_sim > 0:
+            recommendations_final = recommendations_final.copy()
+            recommendations_final['similarity'] = 1.0
         else:
-             recommendations_final.loc[:, 'similarity'] = 0.0
-
+            recommendations_final = recommendations_final.copy()
+            recommendations_final['similarity'] = 0.0
 
     return recommendations_final[['track_id', 'artist', 'title', 'category', 'similarity', 'score']]
+
 
 def recommend_artists(dataset: pd.DataFrame, pca_model: PCA, feature_cols: list, user_profile: dict, n=5):
     if user_profile['track_count'] == 0 or pca_model is None:
         print("Warning: Empty user profile or missing PCA model. Cannot recommend artists.")
         return []
 
-    # Getting known artists to exclude
+    # Getting known artists to exclude efficiently
     known_artists = set(user_profile['top_artists'])
 
-    track_recommendations = recommend_tracks(dataset, pca_model, feature_cols, user_profile, n=100)
+    # Get track recommendations more efficiently (fewer tracks needed for artist recommendations)
+    track_recommendations = recommend_tracks(dataset, pca_model, feature_cols, user_profile, n=50)
 
     if track_recommendations.empty:
         print("No track recommendations found to base artist recommendations on.")
         return []
 
-    artist_counts = Counter(track_recommendations['artist'])
+    # Use pandas groupby for more efficient aggregation
+    artist_stats = track_recommendations.groupby('artist').agg({
+        'similarity': ['mean', 'count']
+    }).round(6)
 
-    recommended_artists = []
-    for artist, count in artist_counts.most_common(n*2):
-        if artist not in known_artists and len(recommended_artists) < n:
-            artist_tracks = track_recommendations[track_recommendations['artist'] == artist]
-            if not artist_tracks.empty:
-                 avg_similarity = artist_tracks['similarity'].mean()
-                 recommended_artists.append({
-                     'artist': artist,
-                     'score': float(avg_similarity),
-                     'track_count': int(count)
-                 })
+    # Flatten column names
+    artist_stats.columns = ['avg_similarity', 'track_count']
+    artist_stats = artist_stats.reset_index()
 
-    # Sort by score (average similarity)
-    recommended_artists.sort(key=lambda x: x['score'], reverse=True)
+    # Filter out known artists and sort by average similarity
+    artist_stats = artist_stats[~artist_stats['artist'].isin(known_artists)]
+    artist_stats = artist_stats.sort_values('avg_similarity', ascending=False)
 
-    return recommended_artists[:n]
+    # Convert to required format
+    recommended_artists = [
+        {
+            'artist': row['artist'],
+            'score': float(row['avg_similarity']),
+            'track_count': int(row['track_count'])
+        }
+        for _, row in artist_stats.head(n).iterrows()
+    ]
+
+    return recommended_artists
+
