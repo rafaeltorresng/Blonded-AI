@@ -39,7 +39,7 @@ def create_user_profile(dataset: pd.DataFrame, pca_model: PCA, feature_cols: lis
     if matched_count == 0 or pca_model is None:
         print("Warning: No tracks matched or PCA model missing! Unable to create user profile vector.")
         return {
-            'feature_vector': np.zeros((1, n_components)), 
+            'feature_vector': np.zeros((1, n_components)),
             'matched_tracks': pd.DataFrame(columns=['track_id', 'artist', 'title']),
             'top_artists': [],
             'top_categories': [],
@@ -58,7 +58,7 @@ def create_user_profile(dataset: pd.DataFrame, pca_model: PCA, feature_cols: lis
         matched_embeddings = pca_model.transform(matched_features)
     except Exception as e:
         print(f"Error applying PCA transform to matched tracks: {e}")
-        return { 
+        return {
             'feature_vector': np.zeros((1, n_components)),
             'matched_tracks': pd.DataFrame(columns=['track_id', 'artist', 'title']),
             'top_artists': [],
