@@ -1,2 +1,36 @@
 .env
 blond
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Data and model files
+data/dataset.csv
+model/
+chroma_db/
+recommendations/
+flask_sessions/
+
+# Spotify cache
+.spotify_cache*
+.cache-*

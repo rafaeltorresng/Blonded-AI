@@ -2,13 +2,13 @@ import os
 import pandas as pd
 import numpy as np
 from collections import Counter
-import pickle
 
 from AI.data_loader import load_dataset, load_scaler
 from AI.embeddings import setup_embeddings, initialize_chromadb, load_embeddings_to_chromadb
 from AI.embeddings import is_vector_search_available, get_chromadb_count, rebuild_chromadb
 from AI.user_profiling import create_user_profile, recommend_tracks, recommend_tracks_with_chromadb, recommend_artists
 from AI.visualization import generate_user_profile_chart
+
 
 class MusicRecommender:
     def __init__(self, dataset_path, scaler_path, n_components=6, use_chromadb=True, chromadb_path=None, collection_name="music_tracks"):
@@ -58,18 +58,18 @@ class MusicRecommender:
         )
 
         if self.chroma_collection is not None and self.get_chromadb_count() == 0 and not self.dataset.empty:
-             print("ChromaDB collection is empty. Attempting to load embeddings...")
-             self.load_embeddings_to_chromadb()
+            print("ChromaDB collection is empty. Attempting to load embeddings...")
+            self.load_embeddings_to_chromadb()
 
         return self.is_vector_search_available()
 
     def load_embeddings_to_chromadb(self):
         if not self.is_vector_search_available():
-             print("Cannot load embeddings: ChromaDB is not available.")
-             return False
+            print("Cannot load embeddings: ChromaDB is not available.")
+            return False
         if self.pca_model is None or self.scaler is None:
-             print("Cannot load embeddings: PCA model or Scaler is not available.")
-             return False
+            print("Cannot load embeddings: PCA model or Scaler is not available.")
+            return False
 
         return load_embeddings_to_chromadb(
             self.chroma_collection,
@@ -99,23 +99,23 @@ class MusicRecommender:
         self.chroma_collection = new_collection
 
         if self.chroma_collection is not None and load_after_rebuild:
-             print("Rebuild complete. Loading embeddings into new collection...")
-             return self.load_embeddings_to_chromadb()
+            print("Rebuild complete. Loading embeddings into new collection...")
+            return self.load_embeddings_to_chromadb()
         elif self.chroma_collection is not None:
-             print("Rebuild complete. New collection is empty.")
-             return True
+            print("Rebuild complete. New collection is empty.")
+            return True
         else:
-             print("Rebuild failed.")
-             return False
+            print("Rebuild failed.")
+            return False
 
     def create_user_profile(self, user_tracks):
         if self.pca_model is None:
-             print("Cannot create profile: PCA model not available.")
-             return {
-                 'feature_vector': np.zeros((1, self.n_components)),
-                 'matched_tracks': pd.DataFrame(columns=['track_id', 'artist', 'title']),
-                 'top_artists': [], 'top_categories': [], 'track_count': 0
-             }
+            print("Cannot create profile: PCA model not available.")
+            return {
+                'feature_vector': np.zeros((1, self.n_components)),
+                'matched_tracks': pd.DataFrame(columns=['track_id', 'artist', 'title']),
+                'top_artists': [], 'top_categories': [], 'track_count': 0
+            }
 
         return create_user_profile(
             self.dataset,
@@ -126,8 +126,8 @@ class MusicRecommender:
 
     def recommend_tracks(self, user_profile, n=30, diversity_factor=0.3):
         if self.pca_model is None:
-             print("Cannot recommend tracks (in-memory): PCA model not available.")
-             return pd.DataFrame()
+            print("Cannot recommend tracks (in-memory): PCA model not available.")
+            return pd.DataFrame()
 
         return recommend_tracks(
             self.dataset,
@@ -151,8 +151,8 @@ class MusicRecommender:
 
     def recommend_artists(self, user_profile, n=5):
         if self.pca_model is None:
-             print("Cannot recommend artists: PCA model not available.")
-             return []
+            print("Cannot recommend artists: PCA model not available.")
+            return []
 
         return recommend_artists(
             self.dataset,
@@ -164,12 +164,12 @@ class MusicRecommender:
 
     def generate_playlist(self, user_profile, name="Your Personalized Playlist", tracks=30, use_vector_search=True):
         if user_profile is None or user_profile.get('track_count', 0) == 0:
-             print("Cannot generate playlist: Invalid user profile.")
-             return {
-                 "name": name, "tracks": [], "artists": [], "genres": [],
-                 "track_count": 0, "generated_at": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-                 "metadata": {"vector_search_used": False, "recommendation_engine": "None - Empty Profile"}
-             }
+            print("Cannot generate playlist: Invalid user profile.")
+            return {
+                "name": name, "tracks": [], "artists": [], "genres": [],
+                "track_count": 0, "generated_at": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "metadata": {"vector_search_used": False, "recommendation_engine": "None - Empty Profile"}
+            }
 
         recommended_tracks_df = pd.DataFrame()
         vector_search_actually_used = False
@@ -179,21 +179,21 @@ class MusicRecommender:
             recommended_tracks_df = self.recommend_tracks_with_chromadb(user_profile, n=tracks)
             vector_search_actually_used = True
             if recommended_tracks_df.empty and user_profile.get('track_count', 0) > 0:
-                 print("ChromaDB search yielded no results or failed, trying in-memory...")
-                 recommended_tracks_df = self.recommend_tracks(user_profile, n=tracks)
-                 vector_search_actually_used = False
+                print("ChromaDB search yielded no results or failed, trying in-memory...")
+                recommended_tracks_df = self.recommend_tracks(user_profile, n=tracks)
+                vector_search_actually_used = False
         else:
             print("Generating playlist using in-memory similarity...")
             recommended_tracks_df = self.recommend_tracks(user_profile, n=tracks)
             vector_search_actually_used = False
 
         if recommended_tracks_df.empty:
-             print("No tracks could be recommended.")
-             return {
-                 "name": name, "tracks": [], "artists": [], "genres": [],
-                 "track_count": 0, "generated_at": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-                 "metadata": {"vector_search_used": vector_search_actually_used, "recommendation_engine": "None - No Recommendations Found"}
-             }
+            print("No tracks could be recommended.")
+            return {
+                "name": name, "tracks": [], "artists": [], "genres": [],
+                "track_count": 0, "generated_at": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "metadata": {"vector_search_used": vector_search_actually_used, "recommendation_engine": "None - No Recommendations Found"}
+            }
 
         recommended_artists = self.recommend_artists(user_profile, n=5)
 
@@ -218,11 +218,11 @@ class MusicRecommender:
 
     def generate_user_profile_chart(self, user_profile, output_path=None):
         if self.pca_model is None:
-             print("Cannot generate chart: PCA model not available.")
-             return None
+            print("Cannot generate chart: PCA model not available.")
+            return None
         if user_profile is None or user_profile.get('track_count', 0) == 0:
-             print("Cannot generate chart: Invalid user profile.")
-             return None
+            print("Cannot generate chart: Invalid user profile.")
+            return None
 
         return generate_user_profile_chart(
             user_profile,

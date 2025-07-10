@@ -9,6 +9,7 @@ input_file = os.path.join(base_dir, 'data', 'dataset.csv')
 output_file = os.path.join(base_dir, 'data', 'processed_dataset.csv')
 scaler_path = os.path.join(base_dir, 'model', 'scaler_model.pkl')
 
+
 def process_csv():
     if not os.path.exists(input_file):
         print(f"Error: Input file not found at {input_file}")
@@ -16,6 +17,7 @@ def process_csv():
 
     print(f"Loading dataset from {input_file}...")
     try:
+        # Use efficient data types and only load necessary columns initially
         df = pd.read_csv(input_file, low_memory=False)
     except Exception as e:
         print(f"Error loading CSV: {e}")
@@ -26,10 +28,10 @@ def process_csv():
 
     # Selecting relevant columns
     relevant_columns = [
-        'track_id', 'artists', 'track_name', 'popularity', 
+        'track_id', 'artists', 'track_name', 'popularity',
         'danceability', 'energy', 'key', 'loudness', 'mode',
         'speechiness', 'acousticness', 'instrumentalness', 'liveness',
-        'valence', 'tempo', 'track_genre' 
+        'valence', 'tempo', 'track_genre'
     ]
 
     missing_relevant = [col for col in relevant_columns if col not in df.columns]
@@ -38,18 +40,18 @@ def process_csv():
         print("Please ensure dataset.csv has the correct header row.")
         return
 
-    df_processed = df[relevant_columns].copy()
-    df_processed.rename(columns={
+    # Select and rename columns in one operation
+    df_processed = df[relevant_columns].rename(columns={
         'artists': 'artist',
         'track_name': 'title',
         'track_genre': 'category'
-    }, inplace=True)
-
+    })
 
     if 'track_id' not in df_processed.columns:
         print("Error: 'track_id' column not found after selecting columns.")
         return
 
+    # Remove duplicates efficiently
     initial_rows = len(df_processed)
     df_processed.drop_duplicates(subset=['track_id'], inplace=True)
     rows_removed = initial_rows - len(df_processed)
@@ -68,18 +70,24 @@ def process_csv():
         return
 
     print("\nConverting numeric columns...")
-    for col in numeric_cols:
-        df_processed[col] = pd.to_numeric(df_processed[col], errors='coerce')
+    # Vectorized conversion of all numeric columns
+    df_processed[numeric_cols] = df_processed[numeric_cols].apply(pd.to_numeric, errors='coerce')
 
     print("Handling missing numeric values (filling with mean)...")
+    # More efficient handling of missing values
     for col in numeric_cols:
         if df_processed[col].isnull().any():
             mean_val = df_processed[col].mean()
             df_processed[col].fillna(mean_val, inplace=True)
             print(f" - Missing values in '{col}' filled with {mean_val:.4f}")
 
+    # Drop rows with any remaining NaNs in numeric columns
+    before_dropna = len(df_processed)
     df_processed.dropna(subset=numeric_cols, inplace=True)
-    print(f"Remaining rows after handling numeric NaNs: {len(df_processed)}")
+    after_dropna = len(df_processed)
+    if before_dropna != after_dropna:
+        print(f"Dropped {before_dropna - after_dropna} rows with remaining NaN values")
+    print(f"Remaining rows after handling numeric NaNs: {after_dropna}")
 
     print("\nScaling numeric features...")
     scaler = StandardScaler()

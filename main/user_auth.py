@@ -118,31 +118,31 @@ class SpotifyUserAuth:
         if not self.sp:
             print("Not authenticated. Call authenticate() first.")
             return False
-            
+
         try:
             time_ranges = ['short_term', 'medium_term', 'long_term']
-            
-            # Coletar faixas para cada período
+
+            # Collect tracks for each period more efficiently
             for time_range in time_ranges:
                 collected_tracks = []
                 offset = 0
-                
+
                 while len(collected_tracks) < tracks_per_period:
                     # Spotify allows a max of 50 items per request
                     current_limit = min(50, tracks_per_period - len(collected_tracks))
-                    
+
                     results = self.sp.current_user_top_tracks(
-                        limit=current_limit, 
+                        limit=current_limit,
                         offset=offset,
                         time_range=time_range
                     )
-                    
-                    if len(results['items']) == 0:
+
+                    if not results['items']:
                         break
-                    
-                    # Process returned items
-                    for item in results['items']:
-                        track_data = {
+
+                    # Process returned items efficiently with list comprehension
+                    new_tracks = [
+                        {
                             'id': item['id'],
                             'name': item['name'],
                             'artist_id': item['artists'][0]['id'],
@@ -150,54 +150,59 @@ class SpotifyUserAuth:
                             'popularity': item['popularity'],
                             'time_range': time_range
                         }
-                        collected_tracks.append(track_data)
-                    
+                        for item in results['items']
+                    ]
+                    collected_tracks.extend(new_tracks)
+
                     offset += len(results['items'])
-                    
+
                     if len(results['items']) < current_limit:
                         break
-                        
+
                 # Add collected tracks to user data
                 self.user_data['top_tracks'].extend(collected_tracks)
                 print(f"✅ Collected {len(collected_tracks)} top tracks ({time_range})")
-            
-            # Similar implementation for artists
+
+            # Similar optimized implementation for artists
             for time_range in time_ranges:
                 collected_artists = []
                 offset = 0
-                
+
                 while len(collected_artists) < artists_per_period:
                     current_limit = min(50, artists_per_period - len(collected_artists))
-                    
+
                     results = self.sp.current_user_top_artists(
-                        limit=current_limit, 
+                        limit=current_limit,
                         offset=offset,
                         time_range=time_range
                     )
-                    
-                    if len(results['items']) == 0:
+
+                    if not results['items']:
                         break
-                        
-                    for item in results['items']:
-                        artist_data = {
+
+                    # Process returned items efficiently with list comprehension
+                    new_artists = [
+                        {
                             'id': item['id'],
                             'name': item['name'],
                             'genres': item['genres'],
                             'popularity': item['popularity'],
                             'time_range': time_range
                         }
-                        collected_artists.append(artist_data)
-                    
+                        for item in results['items']
+                    ]
+                    collected_artists.extend(new_artists)
+
                     offset += len(results['items'])
-                    
+
                     if len(results['items']) < current_limit:
                         break
-                
+
                 self.user_data['top_artists'].extend(collected_artists)
                 print(f"✅ Collected {len(collected_artists)} top artists ({time_range})")
-                
+
             return True
-            
+
         except Exception as e:
             print(f"❌ Error collecting user data: {str(e)}")
             return False
@@ -222,7 +227,7 @@ class SpotifyUserAuth:
         if not self.sp:
             print("Not authenticated. Call authenticate() first.")
             return None
-            
+
         try:
             playlist = self.sp.user_playlist_create(
                 user=self.user_data['user_id'],
@@ -230,23 +235,24 @@ class SpotifyUserAuth:
                 public=False,
                 description=description
             )
-            
+
             playlist_id = playlist['id']
             batch_size = 100
-            
+
+            # Add tracks in batches efficiently
             for i in range(0, len(track_ids), batch_size):
-                batch = track_ids[i:min(i + batch_size, len(track_ids))]
+                batch = track_ids[i:i + batch_size]
                 self.sp.playlist_add_items(playlist_id, batch)
-            
+
             print(f"✅ Created playlist '{playlist_name}' with {len(track_ids)} tracks")
-            
+
             return {
                 'id': playlist_id,
                 'name': playlist_name,
                 'url': playlist['external_urls']['spotify'],
                 'tracks_added': len(track_ids)
             }
-            
+
         except Exception as e:
             print(f"❌ Error creating playlist: {str(e)}")
             return None
