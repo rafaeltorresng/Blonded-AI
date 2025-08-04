@@ -167,7 +167,7 @@ def recommend_tracks_with_chromadb(dataset: pd.DataFrame, pca_model: PCA, featur
     try:
         results = chroma_collection.query(
             query_embeddings=[user_vector],
-            n_results=n * 3,  
+            n_results=n * 100, 
             include=["metadatas", "distances"]
         )
     except Exception as e:
