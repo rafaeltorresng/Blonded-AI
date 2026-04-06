@@ -1,25 +1,25 @@
 #  Blonded AI
 Blonded AI is my personal project to blend the worlds of AI and music. It utilizes the power of music embeddings to understand your taste at a deeper level based on Spotify data, creating highly personalized recommendations.
 
-## ✨ Features
-### 🎯 Embedding-Based Recommendations
+## Features
+### Embedding-Based Recommendations
 - Uses advanced vector representations of songs through PCA (Principal Component Analysis)
 - Optimally reduces 9 audio features to 6 dimensions while preserving 90% of information
 - Enhances recommendation quality by capturing correlated musical patterns
-### 🔍 Vector Database Search
+### Vector Database Search
 - Leverages ChromaDB for high-performance similarity search
 - Indexes over 113,000 songs for instant retrieval
 - Enables sub-second recommendations even with complex preference vectors
-### 🎸 Artists and Tracks Discovery
+### Artists and Tracks Discovery
 - Finds similar artists based on musical style
 - Suggests tracks matching your taste profile
 - Explores new genres aligned with your preferences
-### 🎵 Spotify Integration
+### Spotify Integration
 - Seamless connection with your Spotify account
 - One-click playlist creation
 - Real-time synchronization with your library
 
-## 🛠️ Project Building Steps
+## Project Building Steps
 - Data Collection: Gathered a comprehensive dataset of Spotify Tracks with audio features and metadata.
 - Embedding Generation: Created song embeddings using PCA to efficiently represent musical characteristics.
 - Vector Database: Implemented ChromaDB to enable efficient similarity search across thousands of songs.
@@ -27,7 +27,7 @@ Blonded AI is my personal project to blend the worlds of AI and music. It utiliz
 - Web App Development: Built a Flask-based web application to provide a user-friendly interface.
 - Spotify Integration: Integrated with the Spotify API to collect user data and export playlists.
 
-## 💻 Technologies Used
+## Technologies Used
 All the skills and technologies used in this project:
 
 <p align="left">
@@ -52,7 +52,7 @@ All the skills and technologies used in this project:
 ### Recommendation
 ![Home Page](/Blonded_web/static/img/BLONDDD01.png)
 
-## ⚙️ Workflow
+## Workflow
 ```bash
 ┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
 │                     │     │                     │     │                     │
@@ -77,7 +77,7 @@ All the skills and technologies used in this project:
 │                     │
 └─────────────────────┘
 ```
-### 📊 Dataset Audio Features
+### Dataset Audio Features
 The recommendation system analyzes songs using these Spotify audio features:
 
 - **Popularity** (0-100)
@@ -92,7 +92,7 @@ The recommendation system analyzes songs using these Spotify audio features:
 
 These features form the foundation of our embeddings, which are then optimized through PCA to create more meaningful song representations for recommendations.
 
-## 🖥️  Setup
+## Setup
 
 1. Clone the repository
 2. Install dependencies:
@@ -118,5 +118,5 @@ Navigate to the Blonded_web directory and run the Flask application:
 5. Access the Application:
 Open your web browser and go to http://127.0.0.1:5000 to access the Blonded AI application.
 
-## 🤝 Contributing
+## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request or contact me if you liked the idea and want develop something.
